@@ -1,10 +1,15 @@
 .gradle
 build
 .idea
-
-*.iml
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
+.idea/workspace.xml
+.idea/libraries
+captures
 .DS_Store
-/captures
+local.properties
+*.iml
+
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
