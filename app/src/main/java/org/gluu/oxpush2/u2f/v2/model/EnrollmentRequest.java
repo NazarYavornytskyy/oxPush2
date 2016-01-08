@@ -6,10 +6,6 @@
 
 package org.gluu.oxpush2.u2f.v2.model;
 
-import org.gluu.oxpush2.util.Utils;
-
-import java.util.Arrays;
-
 /**
  * Enrollment request
  *
@@ -42,24 +38,6 @@ public class EnrollmentRequest {
      */
     public byte[] getApplicationSha256() {
         return applicationSha256;
-    }
-
-    @Override
-    public int hashCode() {
-        return Utils.hash(applicationSha256, challengeSha256);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        EnrollmentRequest other = (EnrollmentRequest) obj;
-        return Arrays.equals(applicationSha256, other.applicationSha256)
-                && Arrays.equals(challengeSha256, other.challengeSha256);
     }
 
 }

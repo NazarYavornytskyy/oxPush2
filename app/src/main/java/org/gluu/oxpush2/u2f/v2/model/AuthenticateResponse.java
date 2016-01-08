@@ -6,10 +6,6 @@
 
 package org.gluu.oxpush2.u2f.v2.model;
 
-import org.gluu.oxpush2.util.Utils;
-
-import java.util.Arrays;
-
 /**
  * Authentication response
  *
@@ -52,25 +48,6 @@ public class AuthenticateResponse {
      */
     public byte[] getSignature() {
         return signature;
-    }
-
-    @Override
-    public int hashCode() {
-        return Utils.hash(userPresence, counter, signature);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        AuthenticateResponse other = (AuthenticateResponse) obj;
-        return Utils.equals(counter, other.counter)
-                && Arrays.equals(signature, other.signature)
-                && Utils.equals(userPresence, other.userPresence);
     }
 
 }

@@ -4,11 +4,6 @@
  *  Copyright (c) 2014, Gluu
  */
 
-/**
- * Network communication service
- *
- * Created by Yuriy Movchan on 12/28/2015.
- */
 package org.gluu.oxpush2.net;
 
 import android.util.Log;
@@ -32,7 +27,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 /**
- * Methods to send requests to oxAuth server
+ * Network communication service
  *
  * Created by Yuriy Movchan on 12/28/2015.
  */

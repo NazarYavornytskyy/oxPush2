@@ -54,7 +54,7 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
     }
 
     @Override
-    public KeyPair generateKeyPair(byte[] applicationSha256, byte[] challengeSha256) {
+    public KeyPair generateKeyPair() {
         // generate ECC key
         SecureRandom random = new SecureRandom();
 

@@ -7,8 +7,6 @@
 package org.gluu.oxpush2.u2f.v2.model;
 
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Objects;
 
 /**
  * Enrollment response
@@ -60,26 +58,6 @@ public class EnrollmentResponse {
      */
     public byte[] getSignature() {
         return signature;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(userPublicKey, keyHandle, attestationCertificate, signature);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        EnrollmentResponse other = (EnrollmentResponse) obj;
-        return Arrays.equals(userPublicKey, other.userPublicKey)
-                && Arrays.equals(keyHandle, other.keyHandle)
-                && Arrays.equals(signature, other.signature)
-                && Objects.equals(attestationCertificate, other.attestationCertificate);
     }
 
 }

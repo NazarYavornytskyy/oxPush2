@@ -1,33 +1,66 @@
+/*
+ *  oxPush2 is available under the MIT License (2008). See http://opensource.org/licenses/MIT for full text.
+ *
+ *  Copyright (c) 2014, Gluu
+ */
+
 package org.gluu.oxpush2.app;
 
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Toast;
+
+import com.google.gson.Gson;
+
+import org.gluu.oxpush2.app.listener.OxPush2RequestListener;
+import org.gluu.oxpush2.model.OxPush2Request;
+import org.gluu.oxpush2.u2f.v2.U2F_V2;
+import org.gluu.oxpush2.u2f.v2.exception.U2FException;
+import org.gluu.oxpush2.u2f.v2.model.TokenResponse;
+import org.gluu.oxpush2.util.Utils;
+import org.json.JSONException;
+
+import java.io.IOException;
 
 /**
  * Main activity
  *
  * Created by Yuriy Movchan on 12/28/2015.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OxPush2RequestListener {
+
+    private static final boolean DEBUG = false;
+    private static final String TAG = "main-activity";
+
+    private U2F_V2 u2f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        this.u2f = new U2F_V2(getApplicationContext());
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-       FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        MainActivityFragment mainActivityFragment = new MainActivityFragment();
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, mainActivityFragment).commit();
+
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                Snackbar.make(view, getString(R.string.oxpush2_into_text), Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
@@ -53,6 +86,59 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onQrRequest(String requestJson) {
+        if (!validateoxPush2Request(requestJson)) {
+            return;
+        }
+
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        Fragment fragment = ProcessFragment.newInstance(requestJson);
+
+        fragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+        fragmentTransaction.replace(R.id.fragment_container, fragment);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
+    }
+
+    @Override
+    public TokenResponse onSign(String jsonRequest, String origin) throws JSONException, IOException, U2FException {
+        return u2f.sign(jsonRequest, origin);
+    }
+
+    @Override
+    public TokenResponse onEnroll(String jsonRequest, String origin) throws JSONException, IOException, U2FException {
+        return u2f.enroll(jsonRequest, origin);
+    }
+
+    private boolean validateoxPush2Request(String requestJson) {
+        boolean result = true;
+        try {
+            // Try to parse JSON
+            OxPush2Request oxPush2Request = new Gson().fromJson(requestJson, OxPush2Request.class);
+
+            // All fields must be not empty
+            if (Utils.isAnyEmpty(oxPush2Request.getIssuer(), oxPush2Request.getApp(), oxPush2Request.getUserName(),
+                    oxPush2Request.getMethod(), oxPush2Request.getState())) {
+                result = false;
+            } else {
+                // Valid authentication method shuld be used
+                if (!(Utils.equals(oxPush2Request.getMethod(), "authenticate") || Utils.equals(oxPush2Request.getMethod(), "enroll"))) {
+                    result = false;
+                }
+            }
+        } catch (Exception ex) {
+            Log.e(TAG, "Failed to parse QR code");
+            result = false;
+        }
+
+        if (!result) {
+            Toast.makeText(getApplicationContext(), R.string.invalid_qr_code, Toast.LENGTH_LONG).show();
+        }
+
+        return result;
     }
 
 }

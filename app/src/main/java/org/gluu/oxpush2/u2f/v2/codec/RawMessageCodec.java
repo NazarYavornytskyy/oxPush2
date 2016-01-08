@@ -21,7 +21,7 @@ public interface RawMessageCodec {
             throws U2FException;
 
     byte[] encodeAuthenticateResponse(AuthenticateResponse authenticateResponse)
-                    throws U2FException;
+            throws U2FException;
 
     byte[] encodeRegistrationSignedBytes(byte[] applicationSha256,
                                          byte[] challengeSha256, byte[] keyHandle, byte[] userPublicKey);

@@ -6,10 +6,6 @@
 
 package org.gluu.oxpush2.u2f.v2.model;
 
-import org.gluu.oxpush2.util.Utils;
-
-import java.util.Arrays;
-
 /**
  * Authentication request
  *
@@ -66,26 +62,6 @@ public class AuthenticateRequest {
      */
     public byte[] getKeyHandle() {
         return keyHandle;
-    }
-
-    @Override
-    public int hashCode() {
-        return Utils.hash(control, challengeSha256, applicationSha256, keyHandle);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        AuthenticateRequest other = (AuthenticateRequest) obj;
-        return Utils.equals(control, other.control)
-                && Arrays.equals(challengeSha256, other.challengeSha256)
-                && Arrays.equals(applicationSha256, other.applicationSha256)
-                && Arrays.equals(keyHandle, other.keyHandle);
     }
 
 }

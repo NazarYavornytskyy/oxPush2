@@ -6,10 +6,9 @@
 
 package org.gluu.oxpush2.u2f.v2.device;
 
+import org.gluu.oxpush2.u2f.v2.cert.KeyPairGenerator;
 import org.gluu.oxpush2.u2f.v2.codec.RawMessageCodec;
 import org.gluu.oxpush2.u2f.v2.exception.U2FException;
-import org.gluu.oxpush2.u2f.v2.cert.KeyPairGenerator;
-import org.gluu.oxpush2.u2f.v2.codec.RawMessageCodecImpl;
 import org.gluu.oxpush2.u2f.v2.model.AuthenticateRequest;
 import org.gluu.oxpush2.u2f.v2.model.AuthenticateResponse;
 import org.gluu.oxpush2.u2f.v2.model.EnrollmentRequest;
@@ -66,7 +65,7 @@ public class U2FKeyImpl implements U2FKey {
             throw new U2FException("Cannot verify user presence");
         }
 
-        KeyPair keyPair = keyPairGenerator.generateKeyPair(applicationSha256, challengeSha256);
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
         byte[] keyHandle = keyPairGenerator.generateKeyHandle(applicationSha256);
 
         dataStore.storeKeyPair(keyPairGenerator.keyHandleToKey(keyHandle), keyPairGenerator.keyPairToJson(keyPair));

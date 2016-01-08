@@ -17,16 +17,17 @@ import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
-import org.gluu.oxpush2.u2f.v2.codec.RawMessageCodec;
-import org.gluu.oxpush2.u2f.v2.exception.U2FException;
 import org.gluu.oxpush2.store.AndroidKeyDataStore;
 import org.gluu.oxpush2.u2f.v2.cert.KeyPairGeneratorImpl;
+import org.gluu.oxpush2.u2f.v2.codec.RawMessageCodec;
 import org.gluu.oxpush2.u2f.v2.codec.RawMessageCodecImpl;
 import org.gluu.oxpush2.u2f.v2.device.U2FKeyImpl;
+import org.gluu.oxpush2.u2f.v2.exception.U2FException;
 import org.gluu.oxpush2.u2f.v2.model.AuthenticateRequest;
 import org.gluu.oxpush2.u2f.v2.model.AuthenticateResponse;
 import org.gluu.oxpush2.u2f.v2.model.EnrollmentRequest;
 import org.gluu.oxpush2.u2f.v2.model.EnrollmentResponse;
+import org.gluu.oxpush2.u2f.v2.model.TokenResponse;
 import org.gluu.oxpush2.u2f.v2.store.DataStoreImpl;
 import org.gluu.oxpush2.u2f.v2.user.UserPresenceVerifierImpl;
 import org.gluu.oxpush2.util.Utils;
@@ -55,10 +56,11 @@ import java.security.spec.InvalidKeySpecException;
  */
 public class U2F_V2 {
 
+    protected static final PrivateKey VENDOR_CERTIFICATE_PRIVATE_KEY = parsePrivateKey(
+            "f3fccc0d00d8031954f90864d43c247f4bf5f0665c6b50cc17749a27d1cf7664");
     // Constants for ClientData.typ
     private static final String REQUEST_TYPE_REGISTER = "navigator.id.finishEnrollment";
     private static final String REQUEST_TYPE_AUTHENTICATE = "navigator.id.getAssertion";
-
     // Constants for building ClientData.challenge
     private static final String JSON_PROPERTY_REQUEST_TYPE = "typ";
     private static final String JSON_PROPERTY_SERVER_CHALLENGE_BASE64 = "challenge";
@@ -76,8 +78,6 @@ public class U2F_V2 {
                     + "631b1459f09e6330055722c8d89b7f48883b9089b88d60d1d9795902b30410df";
     protected static final X509Certificate VENDOR_CERTIFICATE =
             parseCertificate(VENDOR_CERTIFICATE_HEX);
-    protected static final PrivateKey VENDOR_CERTIFICATE_PRIVATE_KEY = parsePrivateKey(
-            "f3fccc0d00d8031954f90864d43c247f4bf5f0665c6b50cc17749a27d1cf7664");
     private static final boolean DEBUG = true;
     private static final String TAG = U2F_V2.class.getName();
     private static final byte[] SELECT_COMMAND = {0x00, (byte) 0xa4, 0x04, 0x00, 0x08, (byte) 0xa0, 0x00, 0x00, 0x06, 0x47, 0x2f, 0x00, 0x01};
@@ -143,7 +143,7 @@ public class U2F_V2 {
         }
     }
 
-    public String enroll(String jsonRequest, String origin) throws JSONException, IOException, U2FException {
+    public TokenResponse enroll(String jsonRequest, String origin) throws JSONException, IOException, U2FException {
         JSONObject request = (JSONObject) new JSONTokener(jsonRequest).nextValue();
 
         if (request.has("registerRequests")) {
@@ -169,16 +169,23 @@ public class U2F_V2 {
         clientData.put(JSON_PROPERTY_REQUEST_TYPE, REQUEST_TYPE_REGISTER);
         clientData.put(JSON_PROPERTY_SERVER_CHALLENGE_BASE64, request.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64));
         clientData.put(JSON_PROPERTY_SERVER_ORIGIN, origin);
+
+        String authenticatedChallenge = request.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64);
         String clientDataString = clientData.toString();
 
         JSONObject response = new JSONObject();
         response.put("registrationData", Utils.base64UrlEncode(resp));
         response.put("clientData", Utils.base64UrlEncode(clientDataString.getBytes(Charset.forName("ASCII"))));
 
-        return response.toString();
+        TokenResponse tokenResponse = new TokenResponse();
+        tokenResponse.setResponse(response.toString());
+        tokenResponse.setChallenge(new String(challenge));
+        tokenResponse.setKeyHandle(new String(enrollmentResponse.getKeyHandle()));
+
+        return tokenResponse;
     }
 
-    public String sign(String jsonRequest, String origin) throws JSONException, IOException, U2FException {
+    public TokenResponse sign(String jsonRequest, String origin) throws JSONException, IOException, U2FException {
         if (DEBUG) {
             Log.d(TAG, "Starting to process sign request: " + jsonRequest);
         }
@@ -198,6 +205,7 @@ public class U2F_V2 {
         Log.i(TAG, "Found " + authenticateRequestArray.length() + " authentication requests");
 
         AuthenticateResponse authenticateResponse = null;
+        String authenticatedChallenge = null;
         JSONObject authRequest = null;
         for (int i = 0; i < authenticateRequestArray.length(); i++) {
             if (DEBUG) {
@@ -212,6 +220,7 @@ public class U2F_V2 {
             byte[] challenge = DigestUtils.sha256(authRequest.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64));
             byte[] keyHandle = Base64.decode(authRequest.getString("keyHandle"), Base64.URL_SAFE | Base64.NO_WRAP);
 
+            authenticatedChallenge = authRequest.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64);
             authenticateResponse = u2fKey.authenticate(new AuthenticateRequest(AuthenticateRequest.CHECK_ONLY, challenge, appParam, keyHandle));
             if (DEBUG) {
                 Log.d(TAG, "Authentication response: " + authenticateResponse);
@@ -228,7 +237,7 @@ public class U2F_V2 {
         byte[] resp = rawMessageCodec.encodeAuthenticateResponse(authenticateResponse);
 
         JSONObject clientData = new JSONObject();
-        clientData.put(JSON_PROPERTY_REQUEST_TYPE, "REQUEST_TYPE_AUTHENTICATE");
+        clientData.put(JSON_PROPERTY_REQUEST_TYPE, REQUEST_TYPE_AUTHENTICATE);
         clientData.put(JSON_PROPERTY_SERVER_CHALLENGE_BASE64, authRequest.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64));
         clientData.put(JSON_PROPERTY_SERVER_ORIGIN, origin);
         String clientDataString = clientData.toString();
@@ -238,7 +247,12 @@ public class U2F_V2 {
         response.put("clientData", Utils.base64UrlEncode(clientDataString.getBytes(Charset.forName("ASCII"))));
         response.put("keyHandle", authRequest.getString("keyHandle"));
 
-        return response.toString();
+        TokenResponse tokenResponse = new TokenResponse();
+        tokenResponse.setResponse(response.toString());
+        tokenResponse.setChallenge(authenticatedChallenge);
+        tokenResponse.setKeyHandle(new String(authRequest.getString("keyHandle")));
+
+        return tokenResponse;
     }
 
 }

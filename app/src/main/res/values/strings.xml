@@ -1,4 +1,29 @@
 <resources>
-    <string name="app_name">oxPush2</string>
+    <string name="app_name">Gluu oxPush2</string>
+    <string name="app_header">Gluu oxPush2</string>
+
+    <string name="oxpush2_into_text">oxPush2 is U2F open source application</string>
+
     <string name="action_settings">Settings</string>
+    <string name="button_scan_oxpush2">Scan oxPush2 QR code</string>
+    <string name="button_approve">Approve</string>
+    <string name="button_decline">Decline</string>
+
+    <string name="scan_oxpush2_prompt">Scan oxPush2 login code</string>
+
+    <string name="process_qr_code">Processing QR code</string>
+
+    <string name="wrong_u2f_metadata">Failed to get Fido U2F metadata</string>
+    <string name="failed_process_challenge">Fido U2F challenge was rejected</string>
+    <string name="wrong_token_response">Fido U2F token response is invalid</string>
+    <string name="failed_process_response">Fido U2F response was rejected</string>
+    <string name="failed_process_status">Get unexpected Fido U2F status</string>
+    <string name="invalid_qr_code">QR code contains invalid oxPush2 request</string>
+
+    <string name="process_u2f_start">Attemting to get Fido U2F request, please wait…</string>
+    <string name="process_u2f_request">Processing Fido U2F request, please wait…</string>
+
+    <string name="auth_result_success">Successful authentication</string>
+    <string name="auth_result_failed">Authentication failure</string>
+    <string name="challenge_doesnt_match">Challenges doesn\'t match</string>
 </resources>

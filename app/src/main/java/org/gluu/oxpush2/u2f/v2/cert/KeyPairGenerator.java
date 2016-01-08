@@ -19,7 +19,7 @@ import java.security.PublicKey;
  */
 public interface KeyPairGenerator {
 
-    KeyPair generateKeyPair(byte[] applicationSha256, byte[] challengeSha256);
+    KeyPair generateKeyPair();
 
     byte[] sign(byte[] signedData, PrivateKey certificatePrivateKey) throws U2FException;
 

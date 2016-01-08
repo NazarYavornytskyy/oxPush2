@@ -11,10 +11,11 @@ import android.util.Base64;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**
- * Utility methods
+ * String utility methods
  *
  * Created by Yuriy Movchan on 12/07/2015.
  */
@@ -42,6 +43,25 @@ public class Utils {
 
     public static byte[] decodeHexString(String arg) throws DecoderException {
         return Hex.decodeHex(arg.toCharArray());
+    }
+
+    public static boolean isEmpty(final CharSequence cs) {
+        return cs == null || cs.length() == 0;
+    }
+    public static boolean isNotEmpty(final CharSequence cs) {
+        return !isEmpty(cs);
+    }
+
+    public static boolean isAnyEmpty(final CharSequence... css) {
+        if (ArrayUtils.isEmpty(css)) {
+            return true;
+        }
+        for (final CharSequence cs : css){
+            if (isEmpty(cs)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

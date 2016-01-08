@@ -30,26 +30,20 @@ public class AndroidKeyDataStore {
         // Prepare empty U2F key pair store
         final SharedPreferences keySettings = context.getSharedPreferences(U2F_KEY_PAIR_FILE, Context.MODE_PRIVATE);
         if (keySettings.getAll().size() == 0) {
-            if (DEBUG) {
-                Log.d(TAG, "Creating empty U2K key pair store");
-            }
+            if (DEBUG) Log.d(TAG, "Creating empty U2K key pair store");
             keySettings.edit().commit();
         }
 
         // Prepare empty U2F key counter store
         final SharedPreferences keyCounts = context.getSharedPreferences(U2F_KEY_COUNT_FILE, Context.MODE_PRIVATE);
         if (keyCounts.getAll().size() == 0) {
-            if (DEBUG) {
-                Log.d(TAG, "Creating empty U2K key counter store");
-            }
+            if (DEBUG) Log.d(TAG, "Creating empty U2K key counter store");
             keyCounts.edit().commit();
         }
     }
 
     public void storeKeyPair(String keyHandle, String keyPair) {
-        if (DEBUG) {
-            Log.d(TAG, "Storing new keyHandle: " + keyHandle + " with keyPair: " + keyPair);
-        }
+        if (DEBUG) Log.d(TAG, "Storing new keyHandle: " + keyHandle + " with keyPair: " + keyPair);
         final SharedPreferences keySettings = context.getSharedPreferences(U2F_KEY_PAIR_FILE, Context.MODE_PRIVATE);
         keySettings.edit().putString(keyHandle, keyPair).commit();
 
@@ -58,25 +52,19 @@ public class AndroidKeyDataStore {
     }
 
     public String getKeyPair(String keyHandle) {
-        if (DEBUG) {
-            Log.d(TAG, "Getting keyPair by keyHandle: " + keyHandle);
-        }
+        if (DEBUG) Log.d(TAG, "Getting keyPair by keyHandle: " + keyHandle);
 
         final SharedPreferences keySettings = context.getSharedPreferences(U2F_KEY_PAIR_FILE, Context.MODE_PRIVATE);
         String keyPair = keySettings.getString(keyHandle, null);
 
-        if (DEBUG) {
-            Log.d(TAG, "Found keyPair " + keyPair + " by keyHandle: " + keyHandle);
-        }
+        if (DEBUG) Log.d(TAG, "Found keyPair " + keyPair + " by keyHandle: " + keyHandle);
 
         return keyPair;
     }
 
 
     public int incrementCounter(String keyHandle) {
-        if (DEBUG) {
-            Log.d(TAG, "Incrementing keyHandle: " + keyHandle + " counter");
-        }
+        if (DEBUG) Log.d(TAG, "Incrementing keyHandle: " + keyHandle + " counter");
 
         final SharedPreferences keyCounts = context.getSharedPreferences(U2F_KEY_COUNT_FILE, Context.MODE_PRIVATE);
 
@@ -85,9 +73,7 @@ public class AndroidKeyDataStore {
 
         keyCounts.edit().putInt(keyHandle, currentCounter).commit();
 
-        if (DEBUG) {
-            Log.d(TAG, "Counter is " + currentCounter + " for keyHandle: " + keyHandle + " counter");
-        }
+        if (DEBUG) Log.d(TAG, "Counter is " + currentCounter + " for keyHandle: " + keyHandle + " counter");
 
         return currentCounter;
     }
