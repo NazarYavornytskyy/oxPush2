@@ -2,7 +2,7 @@
     <string name="app_name">Gluu oxPush2</string>
     <string name="app_header">Gluu oxPush2</string>
 
-    <string name="oxpush2_into_text">oxPush2 is U2F open source application</string>
+    <string name="oxpush2_into_text">Open Source Mobile Authentication from Gluu</string>
 
     <string name="action_settings">Settings</string>
     <string name="button_scan_oxpush2">Scan oxPush2 QR code</string>
