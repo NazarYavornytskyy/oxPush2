@@ -13,20 +13,27 @@ package org.gluu.oxpush2.u2f.v2.model;
  */
 public class AuthenticateRequest {
 
+    public static final byte USER_PRESENT_FLAG = (byte) 0x01;
+    public static final byte USER_PRESENCE_SIGN = 0x03;
     public static final byte CHECK_ONLY = 0x07;
-    private static final byte USER_PRESENCE_SIGN = 0x03;
 
+    private final String version;
     private final byte control;
-    private final byte[] challengeSha256;
-    private final byte[] applicationSha256;
+    private final String challenge;
+    private final String application;
     private final byte[] keyHandle;
 
-    public AuthenticateRequest(byte control, byte[] challengeSha256, byte[] applicationSha256,
+    public AuthenticateRequest(String version, byte control, String challenge, String application,
                                byte[] keyHandle) {
+        this.version = version;
         this.control = control;
-        this.challengeSha256 = challengeSha256;
-        this.applicationSha256 = applicationSha256;
+        this.challenge = challenge;
+        this.application = application;
         this.keyHandle = keyHandle;
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     /**
@@ -39,26 +46,21 @@ public class AuthenticateRequest {
     }
 
     /**
-     * The challenge parameter is the SHA-256 hash of the Client Data, a
-     * stringified JSON datastructure that the FIDO Client prepares. Among other
-     * things, the Client Data contains the challenge from the relying party
-     * (hence the name of the parameter). See below for a detailed explanation of
-     * Client Data.
+     * The challenge parameter
      */
-    public byte[] getChallengeSha256() {
-        return challengeSha256;
+    public String getChallenge() {
+        return challenge;
     }
 
     /**
-     * The application parameter is the SHA-256 hash of the application identity
-     * of the application requesting the registration
+     * The application parameter is the application identity of the application requesting the registration
      */
-    public byte[] getApplicationSha256() {
-        return applicationSha256;
+    public String getApplication() {
+        return application;
     }
 
     /**
-     * The org.gluu.oxpush2.u2f.key handle obtained during registration.
+     * The key handle obtained during registration
      */
     public byte[] getKeyHandle() {
         return keyHandle;

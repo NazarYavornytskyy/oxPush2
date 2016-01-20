@@ -9,6 +9,7 @@ package org.gluu.oxpush2.u2f.v2.cert;
 import android.util.Log;
 
 import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -34,7 +35,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
@@ -49,8 +49,10 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
     private static final boolean DEBUG = true;
     private static final String TAG = KeyPairGeneratorImpl.class.getName();
 
+    private static BouncyCastleProvider bouncyCastleProvider;
+
     static {
-        Security.addProvider(new BouncyCastleProvider());
+        bouncyCastleProvider = new BouncyCastleProvider();
     }
 
     @Override
@@ -60,7 +62,7 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
 
         ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
         try {
-            KeyPairGenerator g = KeyPairGenerator.getInstance("ECDSA", new BouncyCastleProvider());
+            KeyPairGenerator g = KeyPairGenerator.getInstance("ECDSA", bouncyCastleProvider);
             g.initialize(ecSpec, random);
             KeyPair keyPair = g.generateKeyPair();
 
@@ -91,7 +93,7 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
     }
 
     @Override
-    public byte[] generateKeyHandle(byte[] applicationSha256) {
+    public byte[] generateKeyHandle() {
         SecureRandom random = new SecureRandom();
         byte[] keyHandle = new byte[64];
         random.nextBytes(keyHandle);
@@ -189,11 +191,6 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
         }
 
         return null;
-    }
-
-    @Override
-    public String keyHandleToKey(byte[] keyHandle) {
-        return Utils.encodeHexString(keyHandle);
     }
 
 }

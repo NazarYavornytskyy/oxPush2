@@ -13,31 +13,40 @@ package org.gluu.oxpush2.u2f.v2.model;
  */
 public class EnrollmentRequest {
 
-    private final byte[] challengeSha256;
-    private final byte[] applicationSha256;
+    private final String version;
+    private final String challenge;
+    private final String application;
+    private final String issuer;
 
-    public EnrollmentRequest(byte[] applicationSha256, byte[] challengeSha256) {
-        this.challengeSha256 = challengeSha256;
-        this.applicationSha256 = applicationSha256;
+    public EnrollmentRequest(String version, String application, String challenge, String issuer) {
+        this.version = version;
+        this.challenge = challenge;
+        this.application = application;
+        this.issuer = issuer;
+    }
+
+    public String getVersion() {
+        return version;
     }
 
     /**
-     * The challenge parameter is the SHA-256 hash of the Client Data, a
-     * stringified JSON datastructure that the FIDO Client prepares. Among other
-     * things, the Client Data contains the challenge from the relying party
-     * (hence the name of the parameter). See below for a detailed explanation of
-     * Client Data.
+     * The challenge parameter
      */
-    public byte[] getChallengeSha256() {
-        return challengeSha256;
+    public String getChallenge() {
+        return challenge;
     }
 
     /**
-     * The application parameter is the SHA-256 hash of the application identity
-     * of the application requesting the registration
+     * The application parameter is the application identity of the application requesting the registration
      */
-    public byte[] getApplicationSha256() {
-        return applicationSha256;
+    public String getApplication() {
+        return application;
     }
 
+    /**
+     * The resource server which support U2F API
+     */
+    public String getIssuer() {
+        return issuer;
+    }
 }

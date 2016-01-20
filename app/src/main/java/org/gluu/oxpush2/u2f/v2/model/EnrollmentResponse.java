@@ -38,9 +38,7 @@ public class EnrollmentResponse {
     }
 
     /**
-     * This a handle that allows the U2F token to identify the generated org.gluu.oxpush2.u2f.key pair.
-     * U2F tokens MAY wrap the generated private org.gluu.oxpush2.u2f.key and the application id it was
-     * generated for, and output that as the org.gluu.oxpush2.u2f.key handle.
+     * This a handle that allows the U2F token to identify the generated key pair.
      */
     public byte[] getKeyHandle() {
         return keyHandle;

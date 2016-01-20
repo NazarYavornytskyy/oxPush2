@@ -6,6 +6,7 @@
 
 package org.gluu.oxpush2.app;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -23,9 +24,11 @@ import com.google.gson.Gson;
 
 import org.gluu.oxpush2.app.listener.OxPush2RequestListener;
 import org.gluu.oxpush2.model.OxPush2Request;
+import org.gluu.oxpush2.store.AndroidKeyDataStore;
 import org.gluu.oxpush2.u2f.v2.U2F_V2;
 import org.gluu.oxpush2.u2f.v2.exception.U2FException;
 import org.gluu.oxpush2.u2f.v2.model.TokenResponse;
+import org.gluu.oxpush2.u2f.v2.store.DataStore;
 import org.gluu.oxpush2.util.Utils;
 import org.json.JSONException;
 
@@ -42,12 +45,15 @@ public class MainActivity extends AppCompatActivity implements OxPush2RequestLis
     private static final String TAG = "main-activity";
 
     private U2F_V2 u2f;
+    private AndroidKeyDataStore dataStore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        this.u2f = new U2F_V2(getApplicationContext());
+        Context context = getApplicationContext();
+        this.dataStore = new AndroidKeyDataStore(context);
+        this.u2f = new U2F_V2(dataStore);
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -90,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements OxPush2RequestLis
 
     @Override
     public void onQrRequest(String requestJson) {
-        if (!validateoxPush2Request(requestJson)) {
+        if (!validateOxPush2Request(requestJson)) {
             return;
         }
 
@@ -113,21 +119,31 @@ public class MainActivity extends AppCompatActivity implements OxPush2RequestLis
         return u2f.enroll(jsonRequest, origin);
     }
 
-    private boolean validateoxPush2Request(String requestJson) {
+    @Override
+    public DataStore onGetDataStore() {
+        return dataStore;
+    }
+
+    private boolean validateOxPush2Request(String requestJson) {
         boolean result = true;
         try {
             // Try to parse JSON
             OxPush2Request oxPush2Request = new Gson().fromJson(requestJson, OxPush2Request.class);
 
-            // All fields must be not empty
-            if (Utils.isAnyEmpty(oxPush2Request.getIssuer(), oxPush2Request.getApp(), oxPush2Request.getUserName(),
-                    oxPush2Request.getMethod(), oxPush2Request.getState())) {
-                result = false;
-            } else {
-                // Valid authentication method shuld be used
-                if (!(Utils.equals(oxPush2Request.getMethod(), "authenticate") || Utils.equals(oxPush2Request.getMethod(), "enroll"))) {
+            boolean isOneStep = Utils.isEmpty(oxPush2Request.getUserName());
+            boolean isTwoStep = Utils.areAllNotEmpty(oxPush2Request.getUserName(), oxPush2Request.getIssuer(), oxPush2Request.getApp(),
+                    oxPush2Request.getState(), oxPush2Request.getMethod());
+
+            if (DEBUG) Log.d(TAG, "isOneStep: " + isOneStep + " isTwoStep: " + isTwoStep);
+
+            if (isOneStep || isTwoStep) {
+                // Valid authentication method should be used
+                if (isTwoStep && !(Utils.equals(oxPush2Request.getMethod(), "authenticate") || Utils.equals(oxPush2Request.getMethod(), "enroll"))) {
                     result = false;
                 }
+            } else {
+                // All fields must be not empty
+                result = false;
             }
         } catch (Exception ex) {
             Log.e(TAG, "Failed to parse QR code");

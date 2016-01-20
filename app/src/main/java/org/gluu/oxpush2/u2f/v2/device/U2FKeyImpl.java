@@ -6,6 +6,8 @@
 
 package org.gluu.oxpush2.u2f.v2.device;
 
+import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.gluu.oxpush2.u2f.v2.cert.KeyPairGenerator;
 import org.gluu.oxpush2.u2f.v2.codec.RawMessageCodec;
 import org.gluu.oxpush2.u2f.v2.exception.U2FException;
@@ -13,6 +15,7 @@ import org.gluu.oxpush2.u2f.v2.model.AuthenticateRequest;
 import org.gluu.oxpush2.u2f.v2.model.AuthenticateResponse;
 import org.gluu.oxpush2.u2f.v2.model.EnrollmentRequest;
 import org.gluu.oxpush2.u2f.v2.model.EnrollmentResponse;
+import org.gluu.oxpush2.u2f.v2.model.TokenEntry;
 import org.gluu.oxpush2.u2f.v2.store.DataStore;
 import org.gluu.oxpush2.u2f.v2.user.UserPresenceVerifier;
 import org.gluu.oxpush2.util.Utils;
@@ -53,27 +56,32 @@ public class U2FKeyImpl implements U2FKey {
     public EnrollmentResponse register(EnrollmentRequest enrollmentRequest) throws U2FException {
         Log.info(">> register");
 
-        byte[] applicationSha256 = enrollmentRequest.getApplicationSha256();
-        byte[] challengeSha256 = enrollmentRequest.getChallengeSha256();
+        String application = enrollmentRequest.getApplication();
+        String challenge = enrollmentRequest.getChallenge();
 
         Log.info(" -- Inputs --");
-        Log.info("  applicationSha256: " + Utils.encodeHexString(applicationSha256));
-        Log.info("  challengeSha256: " + Utils.encodeHexString(challengeSha256));
+        Log.info("  application: " + application);
+        Log.info("  challenge: " + challenge);
 
         byte userPresent = userPresenceVerifier.verifyUserPresence();
-        if ((userPresent & UserPresenceVerifier.USER_PRESENT_FLAG) == 0) {
+        if ((userPresent & AuthenticateRequest.USER_PRESENT_FLAG) == 0) {
             throw new U2FException("Cannot verify user presence");
         }
 
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
-        byte[] keyHandle = keyPairGenerator.generateKeyHandle(applicationSha256);
+        if (keyPair == null) {
+            throw new U2FException("Failed to generate key pair");
+        }
+        byte[] keyHandle = keyPairGenerator.generateKeyHandle();
 
-        dataStore.storeKeyPair(keyPairGenerator.keyHandleToKey(keyHandle), keyPairGenerator.keyPairToJson(keyPair));
+        TokenEntry tokenEntry = new TokenEntry(keyPairGenerator.keyPairToJson(keyPair), enrollmentRequest.getApplication(), enrollmentRequest.getIssuer());
+        dataStore.storeTokenEntry(keyHandle, tokenEntry);
 
         byte[] userPublicKey = keyPairGenerator.encodePublicKey(keyPair.getPublic());
 
-        byte[] signedData = rawMessageCodec.encodeRegistrationSignedBytes(applicationSha256, challengeSha256,
-                keyHandle, userPublicKey);
+        byte[] applicationSha256 = DigestUtils.sha256(application);
+        byte[] challengeSha256 = DigestUtils.sha256(challenge);
+        byte[] signedData = rawMessageCodec.encodeRegistrationSignedBytes(applicationSha256, challengeSha256, keyHandle, userPublicKey);
         Log.info("Signing bytes " + Utils.encodeHexString(signedData));
 
         byte[] signature = keyPairGenerator.sign(signedData, certificatePrivateKey);
@@ -93,11 +101,25 @@ public class U2FKeyImpl implements U2FKey {
     public AuthenticateResponse authenticate(AuthenticateRequest authenticateRequest)
             throws U2FException {
         Log.info(">> authenticate");
+
+        byte control = authenticateRequest.getControl();
+        String application = authenticateRequest.getApplication();
+        String challenge = authenticateRequest.getChallenge();
         byte[] keyHandle = authenticateRequest.getKeyHandle();
 
-        String keyHandleKey = keyPairGenerator.keyHandleToKey(keyHandle);
+        Log.info(" -- Inputs --");
+        Log.info("  control: " + control);
+        Log.info("  application: " + application);
+        Log.info("  challenge: " + challenge);
+        Log.info("  keyHandle: " + Utils.encodeHexString(keyHandle));
 
-        String keyPairJson = dataStore.getKeyPair(keyHandleKey);
+        TokenEntry tokenEntry = dataStore.getTokenEntry(keyHandle);
+
+        if (!StringUtils.equals(application, tokenEntry.getApplication())) {
+            throw new U2FException("KeyHandle " + Utils.encodeHexString(keyHandle) + " is associated with application: " + tokenEntry.getApplication());
+        }
+
+        String keyPairJson = tokenEntry.getKeyPair();
         if (keyPairJson == null) {
             Log.warning("  There is no keyPair for keyHandle: " + Utils.encodeHexString(keyHandle));
             return null;
@@ -109,18 +131,10 @@ public class U2FKeyImpl implements U2FKey {
             return null;
         }
 
-        byte control = authenticateRequest.getControl();
-        byte[] applicationSha256 = authenticateRequest.getApplicationSha256();
-        byte[] challengeSha256 = authenticateRequest.getChallengeSha256();
-
-        Log.info(" -- Inputs --");
-        Log.info("  control: " + control);
-        Log.info("  applicationSha256: " + Utils.encodeHexString(applicationSha256));
-        Log.info("  challengeSha256: " + Utils.encodeHexString(challengeSha256));
-        Log.info("  keyHandle: " + Utils.encodeHexString(keyHandle));
-
-        int counter = dataStore.incrementCounter(keyHandleKey);
+        int counter = dataStore.incrementCounter(keyHandle);
         byte userPresence = userPresenceVerifier.verifyUserPresence();
+        byte[] applicationSha256 = DigestUtils.sha256(application);
+        byte[] challengeSha256 = DigestUtils.sha256(challenge);
         byte[] signedData = rawMessageCodec.encodeAuthenticateSignedBytes(applicationSha256, userPresence,
                 counter, challengeSha256);
 

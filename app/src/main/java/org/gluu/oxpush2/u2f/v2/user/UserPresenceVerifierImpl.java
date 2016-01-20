@@ -9,7 +9,7 @@ package org.gluu.oxpush2.u2f.v2.user;
 /**
  * User presence checker
  *
- * Created by Yuriy Movchan on 12/07.2015.
+ * Created by Yuriy Movchan on 12/07/2015.
  */
 public class UserPresenceVerifierImpl implements UserPresenceVerifier {
 

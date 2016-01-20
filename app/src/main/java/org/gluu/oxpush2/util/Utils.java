@@ -61,7 +61,21 @@ public class Utils {
                 return true;
             }
         }
+
         return false;
+    }
+
+    public static boolean areAllNotEmpty(final CharSequence... css) {
+        if (ArrayUtils.isEmpty(css)) {
+            return false;
+        }
+        for (final CharSequence cs : css){
+            if (isEmpty(cs)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 }

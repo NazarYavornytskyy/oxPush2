@@ -19,6 +19,7 @@
     <string name="failed_process_response">Fido U2F response was rejected</string>
     <string name="failed_process_status">Get unexpected Fido U2F status</string>
     <string name="invalid_qr_code">QR code contains invalid oxPush2 request</string>
+    <string name="no_valid_key_handles">The aren\'t valid devices associated with specified application</string>
 
     <string name="process_u2f_start">Attemting to get Fido U2F request, please wait…</string>
     <string name="process_u2f_request">Processing Fido U2F request, please wait…</string>

@@ -20,12 +20,16 @@ import org.gluu.oxpush2.model.U2fOperationResult;
 import org.gluu.oxpush2.net.HTTP;
 import org.gluu.oxpush2.u2f.v2.exception.U2FException;
 import org.gluu.oxpush2.u2f.v2.model.TokenResponse;
+import org.gluu.oxpush2.u2f.v2.store.DataStore;
+import org.gluu.oxpush2.util.Utils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -143,10 +147,17 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
             }
         });
 
+        final boolean oneStep = Utils.isEmpty(oxPush2Request.getUserName());
+
+        DataStore dataStore = oxPush2RequestListener.onGetDataStore();
+        final List<byte[]> keyHandles = dataStore.getKeyHandlesByIssuerAndAppId(oxPush2Request.getIssuer(), oxPush2Request.getApp());
+
         final Map<String, String> parameters = new HashMap<String, String>();
-        parameters.put("username", oxPush2Request.getUserName());
         parameters.put("application", oxPush2Request.getApp());
         parameters.put("session_state", oxPush2Request.getState());
+        if (!oneStep) {
+            parameters.put("username", oxPush2Request.getUserName());
+        }
 
         new Thread(new Runnable() {
             @Override
@@ -154,29 +165,59 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                 try {
                     final U2fMetaData u2fMetaData = getU2fMetaData();
 
-                    if (DEBUG) Log.i(TAG, "Authentication method: " + oxPush2Request.getMethod());
-
+                    final boolean isEnroll = (oneStep && (keyHandles.size() == 0)) || StringUtils.equals(oxPush2Request.getMethod(), "enroll");
                     final String u2fEndpoint;
-                    if (StringUtils.equals(oxPush2Request.getMethod(), "enroll")) {
+                    if (isEnroll) {
                         u2fEndpoint = u2fMetaData.getRegistrationEndpoint();
+                        if (DEBUG) Log.i(TAG, "Authentication method: enroll");
                     } else {
                         u2fEndpoint = u2fMetaData.getAuthenticationEndpoint();
+                        if (DEBUG) Log.i(TAG, "Authentication method: authenticate");
                     }
 
-                    final String challengeJsonResponse = HTTP.get(u2fEndpoint, parameters);
-                    if (DEBUG) Log.i(TAG, "Get U2F JSON response: " + challengeJsonResponse);
+                    final String challengeJsonResponse;
+                    if (oneStep && (keyHandles.size() > 0)) {
+                        // Try to get challenge using all keyHandles associated with issuer and application
 
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
+                        String validChallengeJsonResponse = null;
+                        for (byte[] keyHandle : keyHandles) {
+                            parameters.put("keyhandle", Utils.base64UrlEncode(keyHandle));
                             try {
-                                onChallengeReceived(u2fMetaData, u2fEndpoint, challengeJsonResponse);
-                            } catch (Exception ex) {
-                                Log.e(TAG, "Failed to process challengeJsonResponse: " + challengeJsonResponse, ex);
-                                setFinalStatus(R.string.failed_process_challenge);
+                                validChallengeJsonResponse = HTTP.get(u2fEndpoint, parameters);
+                                break;
+                            } catch (FileNotFoundException ex) {
+                                Log.i(TAG, "Found invalid keyHandle: " + Utils.base64UrlEncode(keyHandle));
                             }
                         }
-                    });
+
+                        challengeJsonResponse = validChallengeJsonResponse;
+                        if (DEBUG) Log.d(TAG, "Get U2F JSON response: " + challengeJsonResponse);
+
+                    } else {
+                        challengeJsonResponse = HTTP.get(u2fEndpoint, parameters);
+                        if (DEBUG) Log.d(TAG, "Get U2F JSON response: " + challengeJsonResponse);
+                    }
+
+                    if (Utils.isEmpty(challengeJsonResponse)) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setFinalStatus(R.string.no_valid_key_handles);
+                            }
+                        });
+                    } else {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    onChallengeReceived(isEnroll, u2fMetaData, u2fEndpoint, challengeJsonResponse);
+                                } catch (Exception ex) {
+                                    Log.e(TAG, "Failed to process challengeJsonResponse: " + challengeJsonResponse, ex);
+                                    setFinalStatus(R.string.failed_process_challenge);
+                                }
+                            }
+                        });
+                    }
                 } catch (Exception ex) {
                     Log.e(TAG, "Failed to get Fido U2F metadata", ex);
                     runOnUiThread(new Runnable() {
@@ -213,7 +254,7 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
         return u2fMetaData;
     }
 
-    private void onChallengeReceived(final U2fMetaData u2fMetaData, final String u2fEndpoint, final String challengeJson) throws IOException, JSONException, U2FException {
+    private void onChallengeReceived(boolean isEnroll, final U2fMetaData u2fMetaData, final String u2fEndpoint, final String challengeJson) throws IOException, JSONException, U2FException {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -221,9 +262,8 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
             }
         });
 
-        final boolean enroll = StringUtils.equals(oxPush2Request.getMethod(), "enroll");
         final TokenResponse tokenResponse;
-        if (enroll) {
+        if (isEnroll) {
             tokenResponse = oxPush2RequestListener.onEnroll(challengeJson, oxPush2Request.getIssuer());
         } else {
             tokenResponse = oxPush2RequestListener.onSign(challengeJson, u2fMetaData.getIssuer());

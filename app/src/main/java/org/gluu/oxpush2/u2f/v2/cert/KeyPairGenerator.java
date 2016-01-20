@@ -23,14 +23,12 @@ public interface KeyPairGenerator {
 
     byte[] sign(byte[] signedData, PrivateKey certificatePrivateKey) throws U2FException;
 
-    byte[] generateKeyHandle(byte[] applicationSha256);
+    byte[] generateKeyHandle();
 
     byte[] encodePublicKey(PublicKey publicKey);
 
     String keyPairToJson(KeyPair keyPair);
 
     KeyPair keyPairFromJson(String keyPairJson);
-
-    String keyHandleToKey(byte[] keyHandle);
 
 }

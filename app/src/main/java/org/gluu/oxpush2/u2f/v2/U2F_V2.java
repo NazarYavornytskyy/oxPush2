@@ -28,7 +28,7 @@ import org.gluu.oxpush2.u2f.v2.model.AuthenticateResponse;
 import org.gluu.oxpush2.u2f.v2.model.EnrollmentRequest;
 import org.gluu.oxpush2.u2f.v2.model.EnrollmentResponse;
 import org.gluu.oxpush2.u2f.v2.model.TokenResponse;
-import org.gluu.oxpush2.u2f.v2.store.DataStoreImpl;
+import org.gluu.oxpush2.u2f.v2.store.DataStore;
 import org.gluu.oxpush2.u2f.v2.user.UserPresenceVerifierImpl;
 import org.gluu.oxpush2.util.Utils;
 import org.json.JSONArray;
@@ -78,12 +78,9 @@ public class U2F_V2 {
                     + "631b1459f09e6330055722c8d89b7f48883b9089b88d60d1d9795902b30410df";
     protected static final X509Certificate VENDOR_CERTIFICATE =
             parseCertificate(VENDOR_CERTIFICATE_HEX);
+
     private static final boolean DEBUG = true;
     private static final String TAG = U2F_V2.class.getName();
-    private static final byte[] SELECT_COMMAND = {0x00, (byte) 0xa4, 0x04, 0x00, 0x08, (byte) 0xa0, 0x00, 0x00, 0x06, 0x47, 0x2f, 0x00, 0x01};
-    private static final byte[] SELECT_COMMAND_YUBICO = {0x00, (byte) 0xa4, 0x04, 0x00, 0x07, (byte) 0xa0, 0x00, 0x00, 0x05, 0x27, 0x10, 0x02};
-    private static final byte[] GET_RESPONSE_COMMAND = {0x00, (byte) 0xc0, 0x00, 0x00, (byte) 0xff};
-    private static final byte[] GET_VERSION_COMMAND = {0x00, (byte) 0x03, 0x00, 0x00, (byte) 0xff};
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -92,7 +89,7 @@ public class U2F_V2 {
     private U2FKeyImpl u2fKey;
     private RawMessageCodec rawMessageCodec;
 
-    public U2F_V2(Context context) {
+    public U2F_V2(DataStore dataStore) {
         this.rawMessageCodec = new RawMessageCodecImpl();
 
         this.u2fKey = new U2FKeyImpl(
@@ -100,7 +97,7 @@ public class U2F_V2 {
                 VENDOR_CERTIFICATE_PRIVATE_KEY,
                 new KeyPairGeneratorImpl(),
                 this.rawMessageCodec,
-                new DataStoreImpl(new AndroidKeyDataStore(context)),
+                dataStore,
                 new UserPresenceVerifierImpl());
 
     }
@@ -158,19 +155,19 @@ public class U2F_V2 {
             throw new RuntimeException("Unsupported U2F_V2 version!");
         }
 
-        byte[] appParam = DigestUtils.sha256(request.getString("appId"));
-        byte[] challenge = DigestUtils.sha256(request.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64));
+        String version = request.getString("version");
+        String appParam = request.getString("appId");
+        String challenge = request.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64);
 
-        EnrollmentResponse enrollmentResponse = u2fKey.register(new EnrollmentRequest(appParam, challenge));
+        EnrollmentResponse enrollmentResponse = u2fKey.register(new EnrollmentRequest(version, appParam, challenge, origin));
 
         byte[] resp = rawMessageCodec.encodeRegisterResponse(enrollmentResponse);
 
         JSONObject clientData = new JSONObject();
         clientData.put(JSON_PROPERTY_REQUEST_TYPE, REQUEST_TYPE_REGISTER);
-        clientData.put(JSON_PROPERTY_SERVER_CHALLENGE_BASE64, request.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64));
+        clientData.put(JSON_PROPERTY_SERVER_CHALLENGE_BASE64, challenge);
         clientData.put(JSON_PROPERTY_SERVER_ORIGIN, origin);
 
-        String authenticatedChallenge = request.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64);
         String clientDataString = clientData.toString();
 
         JSONObject response = new JSONObject();
@@ -216,12 +213,14 @@ public class U2F_V2 {
             if (!authRequest.getString("version").equals("U2F_V2")) {
                 throw new RuntimeException("Unsupported U2F_V2 version!");
             }
-            byte[] appParam = DigestUtils.sha256(authRequest.getString("appId"));
-            byte[] challenge = DigestUtils.sha256(authRequest.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64));
+
+            String version = authRequest.getString("version");
+            String appParam = authRequest.getString("appId");
+            String challenge = authRequest.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64);
             byte[] keyHandle = Base64.decode(authRequest.getString("keyHandle"), Base64.URL_SAFE | Base64.NO_WRAP);
 
             authenticatedChallenge = authRequest.getString(JSON_PROPERTY_SERVER_CHALLENGE_BASE64);
-            authenticateResponse = u2fKey.authenticate(new AuthenticateRequest(AuthenticateRequest.CHECK_ONLY, challenge, appParam, keyHandle));
+            authenticateResponse = u2fKey.authenticate(new AuthenticateRequest(version, AuthenticateRequest.USER_PRESENCE_SIGN , challenge, appParam, keyHandle));
             if (DEBUG) {
                 Log.d(TAG, "Authentication response: " + authenticateResponse);
             }

@@ -6,17 +6,23 @@
 
 package org.gluu.oxpush2.u2f.v2.store;
 
+import org.gluu.oxpush2.u2f.v2.model.TokenEntry;
+
+import java.util.List;
+
 /**
  * Service to work with key pair store
  *
- * Created by Yuriy Movchan on 07/12/2015.
+ * Created by Yuriy Movchan on 12/07/2015.
  */
 public interface DataStore {
 
-    void storeKeyPair(String keyHandle, String keyPair);
+    void storeTokenEntry(byte[] keyHandle, TokenEntry tokenEntry);
 
-    String getKeyPair(String keyHandle);
+    TokenEntry getTokenEntry(byte[] keyHandle);
 
-    int incrementCounter(String keyHandle);
+    int incrementCounter(byte[] keyHandle);
+
+    List<byte[]> getKeyHandlesByIssuerAndAppId(String application, String issuer);
 
 }
