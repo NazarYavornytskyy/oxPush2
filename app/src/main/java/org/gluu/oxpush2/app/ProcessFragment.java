@@ -135,6 +135,11 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
         getView().findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
     }
 
+    private void setErrorStatus(Exception ex) {
+        ((TextView) getView().findViewById(R.id.status_text)).setText(ex.getMessage());
+        getView().findViewById(R.id.progressBar).setVisibility(View.INVISIBLE);
+    }
+
     private void onOxPushApproveRequest() {
         runOnUiThread(new Runnable() {
             @Override
@@ -214,16 +219,18 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                                 } catch (Exception ex) {
                                     Log.e(TAG, "Failed to process challengeJsonResponse: " + challengeJsonResponse, ex);
                                     setFinalStatus(R.string.failed_process_challenge);
+                                    if (DEBUG) setErrorStatus(ex);
                                 }
                             }
                         });
                     }
-                } catch (Exception ex) {
+                } catch (final Exception ex) {
                     Log.e(TAG, "Failed to get Fido U2F metadata", ex);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             setFinalStatus(R.string.wrong_u2f_metadata);
+                            if (DEBUG) setErrorStatus(ex);
                         }
                     });
                 }
@@ -299,12 +306,13 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                             }
                         }
                     });
-                } catch (Exception ex) {
+                } catch (final Exception ex) {
                     Log.e(TAG, "Failed to send Fido U2F response", ex);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             setFinalStatus(R.string.failed_process_response);
+                            if (DEBUG) setErrorStatus(ex);
                         }
                     });
                 }

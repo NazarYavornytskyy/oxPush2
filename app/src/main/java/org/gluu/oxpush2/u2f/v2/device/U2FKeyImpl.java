@@ -115,6 +115,11 @@ public class U2FKeyImpl implements U2FKey {
 
         TokenEntry tokenEntry = dataStore.getTokenEntry(keyHandle);
 
+        if (tokenEntry == null) {
+            Log.warning("  There is no keyPair for keyHandle: " + Utils.encodeHexString(keyHandle));
+            return null;
+        }
+
         if (!StringUtils.equals(application, tokenEntry.getApplication())) {
             throw new U2FException("KeyHandle " + Utils.encodeHexString(keyHandle) + " is associated with application: " + tokenEntry.getApplication());
         }
