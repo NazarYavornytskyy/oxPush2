@@ -26,15 +26,18 @@ public class OxPush2Request {
 
     private String method;
 
+    private String created;
+
     public OxPush2Request() {
     }
 
-    public OxPush2Request(String userName, String issuer, String app, String state, String method) {
+    public OxPush2Request(String userName, String issuer, String app, String state, String method, String created) {
         this.userName = userName;
         this.issuer = issuer;
         this.app = app;
         this.state = state;
         this.method = method;
+        this.created = created;
     }
 
     public String getUserName() {
@@ -57,4 +60,7 @@ public class OxPush2Request {
         return method;
     }
 
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
 }

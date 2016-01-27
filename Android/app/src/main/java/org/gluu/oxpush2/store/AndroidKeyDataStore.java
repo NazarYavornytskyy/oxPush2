@@ -14,6 +14,7 @@ import com.google.gson.Gson;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.StringUtils;
+import org.gluu.oxpush2.app.BuildConfig;
 import org.gluu.oxpush2.u2f.v2.model.TokenEntry;
 import org.gluu.oxpush2.u2f.v2.store.DataStore;
 import org.gluu.oxpush2.util.Utils;
@@ -32,7 +33,6 @@ public class AndroidKeyDataStore implements DataStore {
     private static final String U2F_KEY_PAIR_FILE = "u2f_key_pairs";
     private static final String U2F_KEY_COUNT_FILE = "u2f_key_counts";
 
-    private static final boolean DEBUG = true;
     private static final String TAG = AndroidKeyDataStore.class.getName();
     private final Context context;
 
@@ -42,14 +42,14 @@ public class AndroidKeyDataStore implements DataStore {
         // Prepare empty U2F key pair store
         final SharedPreferences keySettings = context.getSharedPreferences(U2F_KEY_PAIR_FILE, Context.MODE_PRIVATE);
         if (keySettings.getAll().size() == 0) {
-            if (DEBUG) Log.d(TAG, "Creating empty U2K key pair store");
+            if (BuildConfig.DEBUG) Log.d(TAG, "Creating empty U2K key pair store");
             keySettings.edit().commit();
         }
 
         // Prepare empty U2F key counter store
         final SharedPreferences keyCounts = context.getSharedPreferences(U2F_KEY_COUNT_FILE, Context.MODE_PRIVATE);
         if (keyCounts.getAll().size() == 0) {
-            if (DEBUG) Log.d(TAG, "Creating empty U2K key counter store");
+            if (BuildConfig.DEBUG) Log.d(TAG, "Creating empty U2K key counter store");
             keyCounts.edit().commit();
         }
     }
@@ -59,7 +59,7 @@ public class AndroidKeyDataStore implements DataStore {
         String keyHandleKey = keyHandleToKey(keyHandle);
 
         final String tokenEntryString = new Gson().toJson(tokenEntry);
-        if (DEBUG) Log.d(TAG, "Storing new keyHandle: " + keyHandleKey + " with tokenEntry: " + tokenEntryString);
+        if (BuildConfig.DEBUG) Log.d(TAG, "Storing new keyHandle: " + keyHandleKey + " with tokenEntry: " + tokenEntryString);
 
         final SharedPreferences keySettings = context.getSharedPreferences(U2F_KEY_PAIR_FILE, Context.MODE_PRIVATE);
 
@@ -73,12 +73,12 @@ public class AndroidKeyDataStore implements DataStore {
     public TokenEntry getTokenEntry(byte[] keyHandle) {
         String keyHandleKey = keyHandleToKey(keyHandle);
 
-        if (DEBUG) Log.d(TAG, "Getting keyPair by keyHandle: " + keyHandleKey);
+        if (BuildConfig.DEBUG) Log.d(TAG, "Getting keyPair by keyHandle: " + keyHandleKey);
 
         final SharedPreferences keySettings = context.getSharedPreferences(U2F_KEY_PAIR_FILE, Context.MODE_PRIVATE);
         final String tokenEntryString = keySettings.getString(keyHandleKey, null);
 
-        if (DEBUG) Log.d(TAG, "Found tokenEntry " + tokenEntryString + " by keyHandle: " + keyHandleKey);
+        if (BuildConfig.DEBUG) Log.d(TAG, "Found tokenEntry " + tokenEntryString + " by keyHandle: " + keyHandleKey);
 
         final TokenEntry tokenEntry = new Gson().fromJson(tokenEntryString, TokenEntry.class);
 
@@ -89,7 +89,7 @@ public class AndroidKeyDataStore implements DataStore {
     public int incrementCounter(byte[] keyHandle) {
         String keyHandleKey = keyHandleToKey(keyHandle);
 
-        if (DEBUG) Log.d(TAG, "Incrementing keyHandle: " + keyHandleKey + " counter");
+        if (BuildConfig.DEBUG) Log.d(TAG, "Incrementing keyHandle: " + keyHandleKey + " counter");
 
         final SharedPreferences keyCounts = context.getSharedPreferences(U2F_KEY_COUNT_FILE, Context.MODE_PRIVATE);
 
@@ -98,7 +98,7 @@ public class AndroidKeyDataStore implements DataStore {
 
         keyCounts.edit().putInt(keyHandleKey, currentCounter).commit();
 
-        if (DEBUG) Log.d(TAG, "Counter is " + currentCounter + " for keyHandle: " + keyHandleKey + " counter");
+        if (BuildConfig.DEBUG) Log.d(TAG, "Counter is " + currentCounter + " for keyHandle: " + keyHandleKey + " counter");
 
         return currentCounter;
     }

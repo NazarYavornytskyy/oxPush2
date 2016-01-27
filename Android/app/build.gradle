@@ -6,13 +6,50 @@ android {
 
     defaultConfig {
         applicationId "org.gluu.oxpush2"
-        minSdkVersion 10
+        minSdkVersion 9
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
     }
     buildTypes {
+        debug {
+            buildConfigField "String", "VENDOR_CERTIFICATE_CERT",
+                            "            \"3082013c3081e4a003020102020a47901280001155957352300a06082a8648ce\" +\n" +
+                            "            \"3d0403023017311530130603550403130c476e756262792050696c6f74301e17\" +\n" +
+                            "            \"0d3132303831343138323933325a170d3133303831343138323933325a303131\" +\n" +
+                            "            \"2f302d0603550403132650696c6f74476e756262792d302e342e312d34373930\" +\n" +
+                            "            \"313238303030313135353935373335323059301306072a8648ce3d020106082a\" +\n" +
+                            "            \"8648ce3d030107034200048d617e65c9508e64bcc5673ac82a6799da3c144668\" +\n" +
+                            "            \"2c258c463fffdf58dfd2fa3e6c378b53d795c4a4dffb4199edd7862f23abaf02\" +\n" +
+                            "            \"03b4b8911ba0569994e101300a06082a8648ce3d0403020347003044022060cd\" +\n" +
+                            "            \"b6061e9c22262d1aac1d96d8c70829b2366531dda268832cb836bcd30dfa0220\" +\n" +
+                            "            \"631b1459f09e6330055722c8d89b7f48883b9089b88d60d1d9795902b30410df\""
+
+            buildConfigField "String", "VENDOR_CERTIFICATE_PASSWORD", "\"f3fccc0d00d8031954f90864d43c247f4bf5f0665c6b50cc17749a27d1cf7664\""
+
+            buildConfigField "String", "OX_SERVER_CERT",
+                            "                \"-----BEGIN CERTIFICATE-----\\n\" +\n" +
+                            "                \"MIIDTzCCAjegAwIBAgIEI5ZGBjANBgkqhkiG9w0BAQsFADBYMQswCQYDVQQGEwJ0dDENMAsGA1UE\\n\" +\n" +
+                            "                \"CBMEVGVzdDENMAsGA1UEBxMEVGVzdDENMAsGA1UEChMEVGVzdDENMAsGA1UECxMEVGVzdDENMAsG\\n\" +\n" +
+                            "                \"A1UEAxMEVGVzdDAeFw0xNTA1MjcyMDAxMzNaFw0xNTA4MjUyMDAxMzNaMFgxCzAJBgNVBAYTAnR0\\n\" +\n" +
+                            "                \"MQ0wCwYDVQQIEwRUZXN0MQ0wCwYDVQQHEwRUZXN0MQ0wCwYDVQQKEwRUZXN0MQ0wCwYDVQQLEwRU\\n\" +\n" +
+                            "                \"ZXN0MQ0wCwYDVQQDEwRUZXN0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhNxreHN3\\n\" +\n" +
+                            "                \"eB+PukskK7MOmhDubv52RGQ3HnWC8sHPa6HqQ+/X/giWrQXSdd8PivQcpDjz9U6eNs7o5l0tjUCE\\n\" +\n" +
+                            "                \"r8Cy/fRh0sS9OkVeoZPWOXEWb+32LtOFuv6cRtgmpO/8v3k/rUrR3Vix1ok9/gP8JHacKzlvk5qe\\n\" +\n" +
+                            "                \"cXWM/LWg5gaKNXI+kzYkaYf46RxvdnI0umARPwywnTjiIzFs6v418usyhWq4J+EV4xZuPVqvuWgb\\n\" +\n" +
+                            "                \"xz3UFn3QV1kUsaG1Sviwdy1gRw3nXVjBjsoGxsPvlGLdYX5tpMKLHajf5VfMqWgRlDpGvTJ/xUT+\\n\" +\n" +
+                            "                \"9r4TzS37tx0yaITxeqTfVPdVRgu53wIDAQABoyEwHzAdBgNVHQ4EFgQUoKxfp9t3gIZBjqkGkFPi\\n\" +\n" +
+                            "                \"Vbw2R4IwDQYJKoZIhvcNAQELBQADggEBAFxTLXefR102MtwAr63OA0a2EFw0NgoGlohpsptNO6XP\\n\" +\n" +
+                            "                \"ISkm4olV9kLwp1V53W4rXReX/MIZeMBJVLCWtZLIWKuiEHE54ptwzS9/YjubUYcYZlwpRzuX1tU9\\n\" +\n" +
+                            "                \"qhFgkl6i0HOOGxcVHht/PL9sGrZ6uOOPwSaJhUgXzDg7rQnCE888fja6/3ywiSwot5y4t31YgtaF\\n\" +\n" +
+                            "                \"6DYfGgBdz+p604v32ntjtKpQ2A0HBnebe1HVG0fPNd+JKX0rkL/NQEomdFqXBuxdmODyVUfR2bkh\\n\" +\n" +
+                            "                \"QzHQdLJREpp3UqcgXH0/4bnehsAqt1ej3wkSI219PWHCqPz/q3Wl13anW69NmAwD89H1oLk=\\n\" +\n" +
+                            "                \"-----END CERTIFICATE-----\""
+            buildConfigField "boolean", "TRUST_ALL_CERT", "false"
+        }
         release {
+            buildConfigField "string", "OX_SERVER_CERT", ""
+            buildConfigField "boolean", "TRUST_ALL_CERT", "false"
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -29,4 +66,6 @@ dependencies {
     compile 'org.bouncycastle:bcprov-jdk15on:1.54'
     compile 'com.journeyapps:zxing-android-embedded:3.0.3@aar'
     compile 'com.google.zxing:core:3.2.1'
+    compile 'com.android.support:support-v4:23.1.1'
+    compile 'com.android.support:recyclerview-v7:23.1.1'
 }

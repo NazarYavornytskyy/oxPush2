@@ -9,7 +9,6 @@ package org.gluu.oxpush2.u2f.v2.cert;
 import android.util.Log;
 
 import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -51,8 +50,10 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
 
     private static BouncyCastleProvider bouncyCastleProvider;
 
+    public static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
+
     static {
-        bouncyCastleProvider = new BouncyCastleProvider();
+        bouncyCastleProvider = BOUNCY_CASTLE_PROVIDER;
     }
 
     @Override
@@ -111,6 +112,22 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
         }
 
         return encoded;
+    }
+
+    @Override
+    public PrivateKey loadPrivateKey(String privateKeyD) {
+        try {
+            KeyFactory fac = KeyFactory.getInstance("ECDSA", BOUNCY_CASTLE_PROVIDER);
+            ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
+            ECPrivateKeySpec keySpec = new ECPrivateKeySpec(
+                    new BigInteger(privateKeyD, 16),
+                    ecSpec);
+            return fac.generatePrivate(keySpec);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public String keyPairToJson(KeyPair keyPair) {
@@ -177,15 +194,13 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
 
         KeyFactory keyFactory = null;
         try {
-            keyFactory = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
+            keyFactory = KeyFactory.getInstance("ECDSA", BOUNCY_CASTLE_PROVIDER);
             PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
             PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
 
             return new KeyPair(publicKey, privateKey);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-//        } catch (NoSuchProviderException e) {
-//            e.printStackTrace();
         } catch (InvalidKeySpecException e) {
             e.printStackTrace();
         }

@@ -27,6 +27,8 @@ public interface KeyPairGenerator {
 
     byte[] encodePublicKey(PublicKey publicKey);
 
+    PrivateKey loadPrivateKey(String privateKey);
+
     String keyPairToJson(KeyPair keyPair);
 
     KeyPair keyPairFromJson(String keyPairJson);

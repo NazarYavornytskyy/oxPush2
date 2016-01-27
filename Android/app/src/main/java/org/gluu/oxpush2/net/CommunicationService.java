@@ -8,6 +8,10 @@ package org.gluu.oxpush2.net;
 
 import android.util.Log;
 
+import org.gluu.oxpush2.app.BuildConfig;
+import org.gluu.oxpush2.util.CertUtils;
+import org.gluu.oxpush2.util.Utils;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -17,6 +21,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -24,6 +30,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 /**
@@ -31,14 +38,14 @@ import javax.net.ssl.X509TrustManager;
  *
  * Created by Yuriy Movchan on 12/28/2015.
  */
-public class HTTP {
+public class CommunicationService {
+
+    private static final String TAG = "communication-service";
 
     public static String get(String baseUrl, Map<String, String> params) throws IOException {
-        Log.d("oxpush2-http", "Attempting to send: " + params);
-        initTrustAllTrustManager();
+        if (BuildConfig.DEBUG) Log.d(TAG, "Attempting to execute get with parameters: " + params);
 
         HttpURLConnection connection = null;
-
         try {
             String urlParameters = getEncodedUrlParameters(params);
             URL url;
@@ -63,10 +70,9 @@ public class HTTP {
     }
 
     public static String post(String baseUrl, Map<String, String> params) throws IOException {
-        initTrustAllTrustManager();
+        if (BuildConfig.DEBUG) Log.d(TAG, "Attempting to execute post with parameters: " + params);
 
         HttpURLConnection connection = null;
-
         try {
             String urlParameters = getEncodedUrlParameters(params);
 
@@ -105,9 +111,10 @@ public class HTTP {
         for (Map.Entry<String, String> entry : params.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
-            Log.d("HTTP", key + " = " + value);
+
+            if (BuildConfig.DEBUG) Log.d(TAG, key + " = " + value);
             if (value == null) {
-                Log.w("HTTP", "Key '" + key + "' value is null");
+                if (BuildConfig.DEBUG) Log.w(TAG, "Key '" + key + "' value is null");
                 continue;
             }
 
@@ -132,7 +139,7 @@ public class HTTP {
         return result.toString();
     }
 
-    private static void initTrustAllTrustManager() {
+    public static void initTrustAllTrustManager() {
         // Create a trust manager that does not validate certificate chains
         TrustManager[] trustAllCerts = new TrustManager[]{
                 new X509TrustManager() {
@@ -152,48 +159,78 @@ public class HTTP {
 
         // Install the all-trusting trust manager
         try {
-            SSLContext sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new java.security.SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         } catch (Exception ex) {
-            Log.d("", "Failed to install trust all TrustManager", ex);
+            Log.e(TAG, "Failed to install Trust All TrustManager", ex);
+        }
+    }
+
+    public static void initTrustCertTrustManager(String certificate, boolean skipHostnameVerification) {
+        // Load certificate
+        X509Certificate cert = CertUtils.loadCertificate(certificate);
+
+        if (cert == null) {
+            Log.e(TAG, "Failed to load certificate");
+        } else {
+            initTrustCertTrustManager(cert, skipHostnameVerification);
+        }
+    }
+
+    public static void initTrustCertTrustManager(X509Certificate cert, boolean skipHostnameVerification) {
+            try {
+            String alias = cert.getSubjectX500Principal().getName();
+
+            // Create trust store
+            KeyStore trustStore = null;
+            trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            trustStore.load(null);
+            trustStore.setCertificateEntry(alias, cert);
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
+            tmf.init(trustStore);
+            TrustManager[] trustManagers = tmf.getTrustManagers();
+
+            // Install the trust-cert trust manager
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustManagers, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+        } catch (Exception ex) {
+            Log.e(TAG, "Failed to install Trust Cert TrustManager", ex);
         }
 
-        HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+        if (skipHostnameVerification) {
+            setTrustAllHostnameVerifier();
+        }
+    }
 
+    private static void setTrustAllHostnameVerifier() {
+        HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
             @Override
             public boolean verify(String s, SSLSession sslSession) {
                 return true;
             }
-
         });
     }
 
+    public static void init() {
+        if (BuildConfig.DEBUG) {
+            // Init trust all manager
+            if (BuildConfig.TRUST_ALL_CERT) {
+                initTrustAllTrustManager();
+                return;
+            }
+
+            // Init trust manager to trust only specific server and skip hostname verifiaction
+            if (Utils.isNotEmpty(BuildConfig.OX_SERVER_CERT)) {
+                initTrustCertTrustManager(BuildConfig.OX_SERVER_CERT, true);
+            }
+        } else {
+            // Init trust manager to trust only specific server
+            if (Utils.isNotEmpty(BuildConfig.OX_SERVER_CERT)) {
+                initTrustCertTrustManager(BuildConfig.OX_SERVER_CERT, false);
+            }
+        }
+    }
 }
-
-/*
-byte[] der = loadPemCertificate(
-        new ByteArrayInputStream(certificateString.getBytes()));
-ByteArrayInputStream derInputStream = new ByteArrayInputStream(der);
-CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-X509Certificate cert = (X509Certificate) certificateFactory
-        .generateCertificate(derInputStream);
-String alias = cert.getSubjectX500Principal().getName();
-
-KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-trustStore.load(null);
-        trustStore.setCertificateEntry(alias, cert);
-
-        Now that we have the “trustStore” KeyStore with the server’s certificate, we use it to initialize the SSLContext. Adding to the code that we had before, production of the SSLContext now becomes:
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("X509");
-        kmf.init(keyStore, clientCertPassword.toCharArray());
-        KeyManager[] keyManagers = kmf.getKeyManagers();
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
-        tmf.init(trustStore);
-        TrustManager[] trustManagers = tmf.getTrustManagers();
-
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(keyManagers, trustManagers, null);
-*/

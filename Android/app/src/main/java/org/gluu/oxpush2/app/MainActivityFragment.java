@@ -32,7 +32,6 @@ import org.gluu.oxpush2.app.listener.OxPush2RequestListener;
  */
 public class MainActivityFragment extends Fragment implements TextView.OnEditorActionListener, View.OnClickListener {
 
-    private static final boolean DEBUG = false;
     private static final String TAG = "main-activity-fragment";
 
     private OxPush2RequestListener oxPush2RequestListener;
@@ -79,7 +78,7 @@ public class MainActivityFragment extends Fragment implements TextView.OnEditorA
                 if (resultCode == Activity.RESULT_OK) {
                     // Parsing bar code reader result
                     IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-                    if (DEBUG) Log.d(TAG, "Parsing QR code result: " + result.toString());
+                    if (BuildConfig.DEBUG) Log.d(TAG, "Parsing QR code result: " + result.toString());
 
                     ((OxPush2RequestListener) getActivity()).onQrRequest(result.getContents());
 

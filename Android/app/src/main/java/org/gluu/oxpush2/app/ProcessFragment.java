@@ -1,3 +1,9 @@
+/*
+ *  oxPush2 is available under the MIT License (2008). See http://opensource.org/licenses/MIT for full text.
+ *
+ *  Copyright (c) 2014, Gluu
+ */
+
 package org.gluu.oxpush2.app;
 
 import android.app.Activity;
@@ -17,14 +23,12 @@ import org.gluu.oxpush2.app.listener.OxPush2RequestListener;
 import org.gluu.oxpush2.model.OxPush2Request;
 import org.gluu.oxpush2.model.U2fMetaData;
 import org.gluu.oxpush2.model.U2fOperationResult;
-import org.gluu.oxpush2.net.HTTP;
+import org.gluu.oxpush2.net.CommunicationService;
 import org.gluu.oxpush2.u2f.v2.exception.U2FException;
 import org.gluu.oxpush2.u2f.v2.model.TokenResponse;
 import org.gluu.oxpush2.u2f.v2.store.DataStore;
 import org.gluu.oxpush2.util.Utils;
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -39,7 +43,6 @@ import java.util.Map;
  */
 public class ProcessFragment extends Fragment implements View.OnClickListener {
 
-    private static final boolean DEBUG = true;
     private static final String TAG = "process-fragment";
 
     private static final String ARG_PARAM1 = "oxPush2Request";
@@ -126,7 +129,7 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
         if (activity != null) {
             activity.runOnUiThread(runnable);
         } else {
-            if (DEBUG) Log.d(TAG, "Activity is null!");
+            if (BuildConfig.DEBUG) Log.d(TAG, "Activity is null!");
         }
     }
 
@@ -174,10 +177,10 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                     final String u2fEndpoint;
                     if (isEnroll) {
                         u2fEndpoint = u2fMetaData.getRegistrationEndpoint();
-                        if (DEBUG) Log.i(TAG, "Authentication method: enroll");
+                        if (BuildConfig.DEBUG) Log.i(TAG, "Authentication method: enroll");
                     } else {
                         u2fEndpoint = u2fMetaData.getAuthenticationEndpoint();
-                        if (DEBUG) Log.i(TAG, "Authentication method: authenticate");
+                        if (BuildConfig.DEBUG) Log.i(TAG, "Authentication method: authenticate");
                     }
 
                     final String challengeJsonResponse;
@@ -188,7 +191,7 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                         for (byte[] keyHandle : keyHandles) {
                             parameters.put("keyhandle", Utils.base64UrlEncode(keyHandle));
                             try {
-                                validChallengeJsonResponse = HTTP.get(u2fEndpoint, parameters);
+                                validChallengeJsonResponse = CommunicationService.get(u2fEndpoint, parameters);
                                 break;
                             } catch (FileNotFoundException ex) {
                                 Log.i(TAG, "Found invalid keyHandle: " + Utils.base64UrlEncode(keyHandle));
@@ -196,11 +199,11 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                         }
 
                         challengeJsonResponse = validChallengeJsonResponse;
-                        if (DEBUG) Log.d(TAG, "Get U2F JSON response: " + challengeJsonResponse);
+                        if (BuildConfig.DEBUG) Log.d(TAG, "Get U2F JSON response: " + challengeJsonResponse);
 
                     } else {
-                        challengeJsonResponse = HTTP.get(u2fEndpoint, parameters);
-                        if (DEBUG) Log.d(TAG, "Get U2F JSON response: " + challengeJsonResponse);
+                        challengeJsonResponse = CommunicationService.get(u2fEndpoint, parameters);
+                        if (BuildConfig.DEBUG) Log.d(TAG, "Get U2F JSON response: " + challengeJsonResponse);
                     }
 
                     if (Utils.isEmpty(challengeJsonResponse)) {
@@ -219,7 +222,7 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                                 } catch (Exception ex) {
                                     Log.e(TAG, "Failed to process challengeJsonResponse: " + challengeJsonResponse, ex);
                                     setFinalStatus(R.string.failed_process_challenge);
-                                    if (DEBUG) setErrorStatus(ex);
+                                    if (BuildConfig.DEBUG) setErrorStatus(ex);
                                 }
                             }
                         });
@@ -230,7 +233,7 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                         @Override
                         public void run() {
                             setFinalStatus(R.string.wrong_u2f_metadata);
-                            if (DEBUG) setErrorStatus(ex);
+                            if (BuildConfig.DEBUG) setErrorStatus(ex);
                         }
                     });
                 }
@@ -245,18 +248,18 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
     private U2fMetaData getU2fMetaData() throws IOException {
         // Request U2f meta data
         String discoveryUrl = oxPush2Request.getIssuer();
-        if (DEBUG && discoveryUrl.contains(":8443")) {
+        if (BuildConfig.DEBUG && discoveryUrl.contains(":8443")) {
             discoveryUrl += "/oxauth/seam/resource/restv1/oxauth/fido-u2f-configuration";
         } else {
             discoveryUrl += "/.well-known/fido-u2f-configuration";
         }
 
-        if (DEBUG) Log.i(TAG, "Attempting to load U2F metadata from: " + discoveryUrl);
+        if (BuildConfig.DEBUG) Log.i(TAG, "Attempting to load U2F metadata from: " + discoveryUrl);
 
-        final String discoveryJson = HTTP.get(discoveryUrl, null);
+        final String discoveryJson = CommunicationService.get(discoveryUrl, null);
         final U2fMetaData u2fMetaData = new Gson().fromJson(discoveryJson, U2fMetaData.class);
 
-        if (DEBUG) Log.i(TAG, "Loaded U2f metadata: " + u2fMetaData);
+        if (BuildConfig.DEBUG) Log.i(TAG, "Loaded U2f metadata: " + u2fMetaData);
 
         return u2fMetaData;
     }
@@ -277,7 +280,7 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
         }
 
         if (tokenResponse == null) {
-            if (DEBUG) Log.e(TAG, "Token response is empty");
+            if (BuildConfig.DEBUG) Log.e(TAG, "Token response is empty");
             setFinalStatus(R.string.wrong_token_response);
             return;
         }
@@ -289,15 +292,15 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
             @Override
             public void run() {
                 try {
-                    final String resultJsonResponse = HTTP.post(u2fEndpoint, parameters);
-                    if (DEBUG) Log.i(TAG, "Get U2F JSON result response: " + resultJsonResponse);
+                    final String resultJsonResponse = CommunicationService.post(u2fEndpoint, parameters);
+                    if (BuildConfig.DEBUG) Log.i(TAG, "Get U2F JSON result response: " + resultJsonResponse);
 
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             try {
                                 final U2fOperationResult u2fOperationResult = new Gson().fromJson(resultJsonResponse, U2fOperationResult.class);
-                                if (DEBUG) Log.i(TAG, "Get U2f operation result: " + u2fOperationResult);
+                                if (BuildConfig.DEBUG) Log.i(TAG, "Get U2f operation result: " + u2fOperationResult);
 
                                 handleResult(u2fMetaData, tokenResponse, u2fOperationResult);
                             } catch (Exception ex) {
@@ -312,7 +315,7 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
                         @Override
                         public void run() {
                             setFinalStatus(R.string.failed_process_response);
-                            if (DEBUG) setErrorStatus(ex);
+                            if (BuildConfig.DEBUG) setErrorStatus(ex);
                         }
                     });
                 }

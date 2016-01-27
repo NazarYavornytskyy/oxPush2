@@ -17,7 +17,6 @@ import org.gluu.oxpush2.u2f.v2.model.EnrollmentResponse;
  *
  * Created by Yuriy Movchan on 12/28/2015.
  */
-@SuppressWarnings("serial")
 public interface U2FKey {
 
     EnrollmentResponse register(EnrollmentRequest enrollmentRequest) throws U2FException;

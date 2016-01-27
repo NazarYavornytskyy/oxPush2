@@ -23,9 +23,11 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 
 import org.gluu.oxpush2.app.listener.OxPush2RequestListener;
+import org.gluu.oxpush2.app.model.KeyContent;
 import org.gluu.oxpush2.model.OxPush2Request;
+import org.gluu.oxpush2.net.CommunicationService;
 import org.gluu.oxpush2.store.AndroidKeyDataStore;
-import org.gluu.oxpush2.u2f.v2.U2F_V2;
+import org.gluu.oxpush2.u2f.v2.SoftwareDevice;
 import org.gluu.oxpush2.u2f.v2.exception.U2FException;
 import org.gluu.oxpush2.u2f.v2.model.TokenResponse;
 import org.gluu.oxpush2.u2f.v2.store.DataStore;
@@ -39,21 +41,22 @@ import java.io.IOException;
  *
  * Created by Yuriy Movchan on 12/28/2015.
  */
-public class MainActivity extends AppCompatActivity implements OxPush2RequestListener {
+public class MainActivity extends AppCompatActivity implements OxPush2RequestListener, KeyFragment.OnListFragmentInteractionListener {
 
-    private static final boolean DEBUG = false;
     private static final String TAG = "main-activity";
 
-    private U2F_V2 u2f;
+    private SoftwareDevice u2f;
     private AndroidKeyDataStore dataStore;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        CommunicationService.init();
+
         Context context = getApplicationContext();
         this.dataStore = new AndroidKeyDataStore(context);
-        this.u2f = new U2F_V2(dataStore);
+        this.u2f = new SoftwareDevice(dataStore);
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -88,6 +91,13 @@ public class MainActivity extends AppCompatActivity implements OxPush2RequestLis
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+            Fragment fragment = KeyFragment.newInstance(1);
+
+            fragmentTransaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+            fragmentTransaction.replace(R.id.fragment_container, fragment);
+            fragmentTransaction.addToBackStack(null);
+            fragmentTransaction.commit();
             return true;
         }
 
@@ -134,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements OxPush2RequestLis
             boolean isTwoStep = Utils.areAllNotEmpty(oxPush2Request.getUserName(), oxPush2Request.getIssuer(), oxPush2Request.getApp(),
                     oxPush2Request.getState(), oxPush2Request.getMethod());
 
-            if (DEBUG) Log.d(TAG, "isOneStep: " + isOneStep + " isTwoStep: " + isTwoStep);
+            if (BuildConfig.DEBUG) Log.d(TAG, "isOneStep: " + isOneStep + " isTwoStep: " + isTwoStep);
 
             if (isOneStep || isTwoStep) {
                 // Valid authentication method should be used
@@ -157,4 +167,8 @@ public class MainActivity extends AppCompatActivity implements OxPush2RequestLis
         return result;
     }
 
+    @Override
+    public void onListFragmentInteraction(KeyContent.KeyItem item) {
+
+    }
 }

@@ -17,7 +17,7 @@ import java.util.UUID;
 /**
  * Simple method to determine device UUID
  *
- * Created by Yuriy Movchan on 08.12.2015.
+ * Created by Yuriy Movchan on 12/08/2015.
  */
 public class DeviceUuidFactory {
 

@@ -6,13 +6,7 @@
 
 package org.gluu.oxpush2.util;
 
-import android.util.Base64;
-
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
-
 import java.lang.reflect.Array;
-import java.util.Arrays;
 
 /**
  * Array utility methods
@@ -29,6 +23,7 @@ public class ArrayUtils {
         if (array == null) {
             return 0;
         }
+
         return Array.getLength(array);
     }
 

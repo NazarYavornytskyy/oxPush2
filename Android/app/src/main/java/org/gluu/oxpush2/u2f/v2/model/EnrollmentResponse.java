@@ -22,7 +22,6 @@ public class EnrollmentResponse {
 
     public EnrollmentResponse(byte[] userPublicKey, byte[] keyHandle,
                               X509Certificate attestationCertificate, byte[] signature) {
-        super();
         this.userPublicKey = userPublicKey;
         this.keyHandle = keyHandle;
         this.attestationCertificate = attestationCertificate;

@@ -11,7 +11,6 @@ import android.util.Base64;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**
@@ -30,7 +29,7 @@ public class Utils {
     }
 
     public static String base64UrlEncode(byte[] arg) {
-        return Base64.encodeToString(arg, 0, arg.length, Base64.URL_SAFE | Base64.NO_WRAP);
+        return Base64.encodeToString(arg, 0, arg.length, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
     }
 
     public static byte[] base64UrlDecode(String arg) {
