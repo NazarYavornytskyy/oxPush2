@@ -25,7 +25,7 @@ android {
                             "            \"b6061e9c22262d1aac1d96d8c70829b2366531dda268832cb836bcd30dfa0220\" +\n" +
                             "            \"631b1459f09e6330055722c8d89b7f48883b9089b88d60d1d9795902b30410df\""
 
-            buildConfigField "String", "VENDOR_CERTIFICATE_PASSWORD", "\"f3fccc0d00d8031954f90864d43c247f4bf5f0665c6b50cc17749a27d1cf7664\""
+            buildConfigField "String", "VENDOR_CERTIFICATE_PRIVATE_KEY", "\"f3fccc0d00d8031954f90864d43c247f4bf5f0665c6b50cc17749a27d1cf7664\""
 
             buildConfigField "String", "OX_SERVER_CERT",
                             "                \"-----BEGIN CERTIFICATE-----\\n\" +\n" +
@@ -48,6 +48,20 @@ android {
             buildConfigField "boolean", "TRUST_ALL_CERT", "false"
         }
         release {
+            buildConfigField "String", "VENDOR_CERTIFICATE_CERT",
+                    "            \"3082013c3081e4a003020102020a47901280001155957352300a06082a8648ce\" +\n" +
+                            "            \"3d0403023017311530130603550403130c476e756262792050696c6f74301e17\" +\n" +
+                            "            \"0d3132303831343138323933325a170d3133303831343138323933325a303131\" +\n" +
+                            "            \"2f302d0603550403132650696c6f74476e756262792d302e342e312d34373930\" +\n" +
+                            "            \"313238303030313135353935373335323059301306072a8648ce3d020106082a\" +\n" +
+                            "            \"8648ce3d030107034200048d617e65c9508e64bcc5673ac82a6799da3c144668\" +\n" +
+                            "            \"2c258c463fffdf58dfd2fa3e6c378b53d795c4a4dffb4199edd7862f23abaf02\" +\n" +
+                            "            \"03b4b8911ba0569994e101300a06082a8648ce3d0403020347003044022060cd\" +\n" +
+                            "            \"b6061e9c22262d1aac1d96d8c70829b2366531dda268832cb836bcd30dfa0220\" +\n" +
+                            "            \"631b1459f09e6330055722c8d89b7f48883b9089b88d60d1d9795902b30410df\""
+
+            buildConfigField "String", "VENDOR_CERTIFICATE_PRIVATE_KEY", "\"f3fccc0d00d8031954f90864d43c247f4bf5f0665c6b50cc17749a27d1cf7664\""
+
             buildConfigField "string", "OX_SERVER_CERT", ""
             buildConfigField "boolean", "TRUST_ALL_CERT", "false"
             minifyEnabled false

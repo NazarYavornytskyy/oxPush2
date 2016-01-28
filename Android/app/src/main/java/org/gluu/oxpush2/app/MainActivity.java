@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements OxPush2RequestLis
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.action_manage_keys) {
             FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
             Fragment fragment = KeyFragment.newInstance(1);
 

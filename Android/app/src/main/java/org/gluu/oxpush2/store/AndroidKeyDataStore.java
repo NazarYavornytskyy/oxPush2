@@ -33,7 +33,7 @@ public class AndroidKeyDataStore implements DataStore {
     private static final String U2F_KEY_PAIR_FILE = "u2f_key_pairs";
     private static final String U2F_KEY_COUNT_FILE = "u2f_key_counts";
 
-    private static final String TAG = AndroidKeyDataStore.class.getName();
+    private static final String TAG = "key-data-store";
     private final Context context;
 
     public AndroidKeyDataStore(Context context) {

@@ -29,8 +29,9 @@ public class RawMessageCodecImpl implements RawMessageCodec {
             throws U2FException {
         byte[] userPublicKey = enrollmentResponse.getUserPublicKey();
         byte[] keyHandle = enrollmentResponse.getKeyHandle();
-        X509Certificate attestationCertificate = enrollmentResponse.getAttestationCertificate();
         byte[] signature = enrollmentResponse.getSignature();
+
+        X509Certificate attestationCertificate = enrollmentResponse.getAttestationCertificate();
 
         byte[] attestationCertificateBytes;
         try {

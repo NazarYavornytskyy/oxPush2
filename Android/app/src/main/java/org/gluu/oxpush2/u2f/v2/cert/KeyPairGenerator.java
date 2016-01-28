@@ -19,7 +19,7 @@ import java.security.PublicKey;
  */
 public interface KeyPairGenerator {
 
-    KeyPair generateKeyPair();
+    KeyPair generateKeyPair() throws U2FException;
 
     byte[] sign(byte[] signedData, PrivateKey certificatePrivateKey) throws U2FException;
 
@@ -27,10 +27,10 @@ public interface KeyPairGenerator {
 
     byte[] encodePublicKey(PublicKey publicKey);
 
-    PrivateKey loadPrivateKey(String privateKey);
+    PrivateKey loadPrivateKey(String privateKey) throws U2FException;
 
-    String keyPairToJson(KeyPair keyPair);
+    String keyPairToJson(KeyPair keyPair) throws U2FException;
 
-    KeyPair keyPairFromJson(String keyPairJson);
+    KeyPair keyPairFromJson(String keyPairJson) throws U2FException;
 
 }

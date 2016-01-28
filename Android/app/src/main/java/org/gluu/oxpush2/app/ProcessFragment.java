@@ -157,9 +157,6 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
 
         final boolean oneStep = Utils.isEmpty(oxPush2Request.getUserName());
 
-        DataStore dataStore = oxPush2RequestListener.onGetDataStore();
-        final List<byte[]> keyHandles = dataStore.getKeyHandlesByIssuerAndAppId(oxPush2Request.getIssuer(), oxPush2Request.getApp());
-
         final Map<String, String> parameters = new HashMap<String, String>();
         parameters.put("application", oxPush2Request.getApp());
         parameters.put("session_state", oxPush2Request.getState());
@@ -172,6 +169,9 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
             public void run() {
                 try {
                     final U2fMetaData u2fMetaData = getU2fMetaData();
+
+                    DataStore dataStore = oxPush2RequestListener.onGetDataStore();
+                    final List<byte[]> keyHandles = dataStore.getKeyHandlesByIssuerAndAppId(oxPush2Request.getIssuer(), oxPush2Request.getApp());
 
                     final boolean isEnroll = (oneStep && (keyHandles.size() == 0)) || StringUtils.equals(oxPush2Request.getMethod(), "enroll");
                     final String u2fEndpoint;

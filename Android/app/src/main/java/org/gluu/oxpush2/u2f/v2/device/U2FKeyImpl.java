@@ -6,8 +6,11 @@
 
 package org.gluu.oxpush2.u2f.v2.device;
 
+import android.util.Log;
+
 import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.gluu.oxpush2.app.BuildConfig;
 import org.gluu.oxpush2.u2f.v2.cert.KeyPairGenerator;
 import org.gluu.oxpush2.u2f.v2.codec.RawMessageCodec;
 import org.gluu.oxpush2.u2f.v2.exception.U2FException;
@@ -23,7 +26,6 @@ import org.gluu.oxpush2.util.Utils;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
 
 /**
  * Fido U2F key service to process enrollment/authentication request
@@ -32,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class U2FKeyImpl implements U2FKey {
 
-    private static final Logger Log = Logger.getLogger(U2FKeyImpl.class.getName());
+    private static final String TAG = "key-data-store";
 
     private final X509Certificate vendorCertificate;
     private final PrivateKey certificatePrivateKey;
@@ -54,14 +56,14 @@ public class U2FKeyImpl implements U2FKey {
 
     @Override
     public EnrollmentResponse register(EnrollmentRequest enrollmentRequest) throws U2FException {
-        Log.info(">> register");
+        if (BuildConfig.DEBUG) Log.d(TAG, ">> register");
 
         String application = enrollmentRequest.getApplication();
         String challenge = enrollmentRequest.getChallenge();
 
-        Log.info(" -- Inputs --");
-        Log.info("  application: " + application);
-        Log.info("  challenge: " + challenge);
+        if (BuildConfig.DEBUG) Log.d(TAG, "-- Inputs --");
+        if (BuildConfig.DEBUG) Log.d(TAG, "application: " + application);
+        if (BuildConfig.DEBUG) Log.d(TAG, "challenge: " + challenge);
 
         byte userPresent = userPresenceVerifier.verifyUserPresence();
         if ((userPresent & AuthenticateRequest.USER_PRESENT_FLAG) == 0) {
@@ -69,9 +71,6 @@ public class U2FKeyImpl implements U2FKey {
         }
 
         KeyPair keyPair = keyPairGenerator.generateKeyPair();
-        if (keyPair == null) {
-            throw new U2FException("Failed to generate key pair");
-        }
         byte[] keyHandle = keyPairGenerator.generateKeyHandle();
 
         TokenEntry tokenEntry = new TokenEntry(keyPairGenerator.keyPairToJson(keyPair), enrollmentRequest.getApplication(), enrollmentRequest.getIssuer());
@@ -82,17 +81,17 @@ public class U2FKeyImpl implements U2FKey {
         byte[] applicationSha256 = DigestUtils.sha256(application);
         byte[] challengeSha256 = DigestUtils.sha256(challenge);
         byte[] signedData = rawMessageCodec.encodeRegistrationSignedBytes(applicationSha256, challengeSha256, keyHandle, userPublicKey);
-        Log.info("Signing bytes " + Utils.encodeHexString(signedData));
+        if (BuildConfig.DEBUG) Log.d(TAG, "Signing bytes " + Utils.encodeHexString(signedData));
 
         byte[] signature = keyPairGenerator.sign(signedData, certificatePrivateKey);
 
-        Log.info(" -- Outputs --");
-        Log.info("  userPublicKey: " + Utils.encodeHexString(userPublicKey));
-        Log.info("  keyHandle: " + Utils.encodeHexString(keyHandle));
-        Log.info("  vendorCertificate: " + vendorCertificate);
-        Log.info("  signature: " + Utils.encodeHexString(signature));
+        if (BuildConfig.DEBUG) Log.d(TAG, "-- Outputs --");
+        if (BuildConfig.DEBUG) Log.d(TAG, "userPublicKey: " + Utils.encodeHexString(userPublicKey));
+        if (BuildConfig.DEBUG) Log.d(TAG, "keyHandle: " + Utils.base64UrlEncode(keyHandle));
+        if (BuildConfig.DEBUG) Log.d(TAG, "vendorCertificate: " + vendorCertificate);
+        if (BuildConfig.DEBUG) Log.d(TAG, "signature: " + Utils.encodeHexString(signature));
 
-        Log.info("<< register");
+        if (BuildConfig.DEBUG) Log.d(TAG, "<< register");
 
         return new EnrollmentResponse(userPublicKey, keyHandle, vendorCertificate, signature);
     }
@@ -100,39 +99,41 @@ public class U2FKeyImpl implements U2FKey {
     @Override
     public AuthenticateResponse authenticate(AuthenticateRequest authenticateRequest)
             throws U2FException {
-        Log.info(">> authenticate");
+        if (BuildConfig.DEBUG) Log.d(TAG, ">> authenticate");
 
         byte control = authenticateRequest.getControl();
         String application = authenticateRequest.getApplication();
         String challenge = authenticateRequest.getChallenge();
         byte[] keyHandle = authenticateRequest.getKeyHandle();
 
-        Log.info(" -- Inputs --");
-        Log.info("  control: " + control);
-        Log.info("  application: " + application);
-        Log.info("  challenge: " + challenge);
-        Log.info("  keyHandle: " + Utils.encodeHexString(keyHandle));
+        if (BuildConfig.DEBUG) Log.d(TAG, "-- Inputs --");
+        if (BuildConfig.DEBUG) Log.d(TAG, "control: " + control);
+        if (BuildConfig.DEBUG) Log.d(TAG, "application: " + application);
+        if (BuildConfig.DEBUG) Log.d(TAG, "challenge: " + challenge);
+        if (BuildConfig.DEBUG) Log.d(TAG, "keyHandle: " + Utils.base64UrlEncode(keyHandle));
 
         TokenEntry tokenEntry = dataStore.getTokenEntry(keyHandle);
 
         if (tokenEntry == null) {
-            Log.warning("  There is no keyPair for keyHandle: " + Utils.encodeHexString(keyHandle));
+            Log.e(TAG, "There is no keyPair for keyHandle: " + Utils.base64UrlEncode(keyHandle));
             return null;
         }
 
         if (!StringUtils.equals(application, tokenEntry.getApplication())) {
-            throw new U2FException("KeyHandle " + Utils.encodeHexString(keyHandle) + " is associated with application: " + tokenEntry.getApplication());
+            throw new U2FException("KeyHandle " + Utils.base64UrlEncode(keyHandle) + " is associated with application: " + tokenEntry.getApplication());
         }
 
         String keyPairJson = tokenEntry.getKeyPair();
         if (keyPairJson == null) {
-            Log.warning("  There is no keyPair for keyHandle: " + Utils.encodeHexString(keyHandle));
+            Log.e(TAG, "There is no keyPair for keyHandle: " + Utils.base64UrlEncode(keyHandle));
             return null;
         }
 
-        KeyPair keyPair = keyPairGenerator.keyPairFromJson(keyPairJson);
-        if (keyPair == null) {
-            Log.warning("  There is no keyPair for keyHandle: " + Utils.encodeHexString(keyHandle));
+        KeyPair keyPair;
+        try {
+            keyPair = keyPairGenerator.keyPairFromJson(keyPairJson);
+        } catch (U2FException ex) {
+            Log.e(TAG, "There is no keyPair for keyHandle: " + Utils.base64UrlEncode(keyHandle));
             return null;
         }
 
@@ -143,16 +144,16 @@ public class U2FKeyImpl implements U2FKey {
         byte[] signedData = rawMessageCodec.encodeAuthenticateSignedBytes(applicationSha256, userPresence,
                 counter, challengeSha256);
 
-        Log.info("Signing bytes " + Utils.encodeHexString(signedData));
+        if (BuildConfig.DEBUG) Log.d(TAG, "Signing bytes " + Utils.encodeHexString(signedData));
 
         byte[] signature = keyPairGenerator.sign(signedData, keyPair.getPrivate());
 
-        Log.info(" -- Outputs --");
-        Log.info("  userPresence: " + userPresence);
-        Log.info("  counter: " + counter);
-        Log.info("  signature: " + Utils.encodeHexString(signature));
+        if (BuildConfig.DEBUG) Log.d(TAG, "-- Outputs --");
+        if (BuildConfig.DEBUG) Log.d(TAG, "userPresence: " + userPresence);
+        if (BuildConfig.DEBUG) Log.d(TAG, "counter: " + counter);
+        if (BuildConfig.DEBUG) Log.d(TAG, "signature: " + Utils.encodeHexString(signature));
 
-        Log.info("<< authenticate");
+        if (BuildConfig.DEBUG) Log.d(TAG, "<< authenticate");
 
         return new AuthenticateResponse(userPresence, counter, signature);
     }

@@ -50,8 +50,8 @@ public class DeviceUuidFactory {
                                 final String deviceId = ((TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE)).getDeviceId();
                                 uuid = deviceId != null ? UUID.nameUUIDFromBytes(deviceId.getBytes("utf8")) : UUID.randomUUID();
                             }
-                        } catch (UnsupportedEncodingException e) {
-                            throw new RuntimeException(e);
+                        } catch (UnsupportedEncodingException ex) {
+                            throw new RuntimeException(ex);
                         }
 
                         // Write the value out to the prefs file

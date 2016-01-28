@@ -5,6 +5,7 @@
     <string name="oxpush2_into_text">Open Source Mobile Authentication from Gluu</string>
 
     <string name="action_settings">Settings</string>
+    <string name="action_manage_keys">Manage Keys</string>
     <string name="button_scan_oxpush2">Scan oxPush2 QR code</string>
     <string name="button_approve">Approve</string>
     <string name="button_decline">Decline</string>
@@ -19,7 +20,7 @@
     <string name="failed_process_response">Fido U2F response was rejected</string>
     <string name="failed_process_status">Get unexpected Fido U2F status</string>
     <string name="invalid_qr_code">QR code contains invalid oxPush2 request</string>
-    <string name="no_valid_key_handles">The aren\'t valid devices associated with specified application</string>
+    <string name="no_valid_key_handles">The aren\'t valid devices associated with specified application. Can you try again and remove expired key(s) associated this application</string>
 
     <string name="process_u2f_start">Attemting to get Fido U2F request, please wait…</string>
     <string name="process_u2f_request">Processing Fido U2F request, please wait…</string>

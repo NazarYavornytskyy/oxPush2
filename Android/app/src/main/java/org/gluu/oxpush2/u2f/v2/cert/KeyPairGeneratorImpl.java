@@ -18,6 +18,7 @@ import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.gluu.oxpush2.app.BuildConfig;
 import org.gluu.oxpush2.u2f.v2.exception.U2FException;
 import org.gluu.oxpush2.util.Utils;
 import org.json.JSONException;
@@ -45,7 +46,6 @@ import java.security.spec.InvalidKeySpecException;
  */
 public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPairGenerator {
 
-    private static final boolean DEBUG = true;
     private static final String TAG = KeyPairGeneratorImpl.class.getName();
 
     private static BouncyCastleProvider bouncyCastleProvider;
@@ -57,7 +57,7 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
     }
 
     @Override
-    public KeyPair generateKeyPair() {
+    public KeyPair generateKeyPair() throws U2FException {
         // generate ECC key
         SecureRandom random = new SecureRandom();
 
@@ -68,13 +68,11 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
             KeyPair keyPair = g.generateKeyPair();
 
             return keyPair;
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new U2FException("Failed to generate key pair", ex);
+        } catch (InvalidAlgorithmParameterException ex) {
+            throw new U2FException("Failed to generate key pair", ex);
         }
-
-        return null;
     }
 
     @Override
@@ -84,12 +82,12 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
             signature.initSign(privateKey);
             signature.update(signedData);
             return signature.sign();
-        } catch (NoSuchAlgorithmException e) {
-            throw new U2FException("Error when signing", e);
-        } catch (SignatureException e) {
-            throw new U2FException("Error when signing", e);
-        } catch (InvalidKeyException e) {
-            throw new U2FException("Error when signing", e);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new U2FException("Error when signing", ex);
+        } catch (SignatureException ex) {
+            throw new U2FException("Error when signing", ex);
+        } catch (InvalidKeyException ex) {
+            throw new U2FException("Error when signing", ex);
         }
     }
 
@@ -98,6 +96,7 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
         SecureRandom random = new SecureRandom();
         byte[] keyHandle = new byte[64];
         random.nextBytes(keyHandle);
+
         return keyHandle;
     }
 
@@ -107,15 +106,13 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
         byte[] encoded = new byte[65];
         System.arraycopy(encodedWithPadding, 26, encoded, 0, encoded.length);
 
-        if (DEBUG) {
-            Log.d(TAG, "Encoded public key: " + Utils.encodeHexString(encoded));
-        }
+        if (BuildConfig.DEBUG) Log.d(TAG, "Encoded public key: " + Utils.encodeHexString(encoded));
 
         return encoded;
     }
 
     @Override
-    public PrivateKey loadPrivateKey(String privateKeyD) {
+    public PrivateKey loadPrivateKey(String privateKeyD) throws U2FException {
         try {
             KeyFactory fac = KeyFactory.getInstance("ECDSA", BOUNCY_CASTLE_PROVIDER);
             ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
@@ -123,14 +120,14 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
                     new BigInteger(privateKeyD, 16),
                     ecSpec);
             return fac.generatePrivate(keySpec);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (InvalidKeySpecException e) {
-            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new U2FException("Failed to load private key", ex);
+        } catch (InvalidKeySpecException ex) {
+            throw new U2FException("Failed to load private key", ex);
         }
     }
 
-    public String keyPairToJson(KeyPair keyPair) {
+    public String keyPairToJson(KeyPair keyPair) throws U2FException {
         ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
         ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
 
@@ -152,19 +149,15 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
 
             String keyPairJson = jsonKeyPair.toString();
 
-            if (DEBUG) {
-                Log.d(TAG, "JSON key pair: " + keyPairJson);
-            }
+            if (BuildConfig.DEBUG) Log.d(TAG, "JSON key pair: " + keyPairJson);
 
             return keyPairJson;
-        } catch (JSONException e) {
-            e.printStackTrace();
+        } catch (JSONException ex) {
+            throw new U2FException("Failed to serialize key pair to JSON", ex);
         }
-
-        return null;
     }
 
-    public KeyPair keyPairFromJson(String keyPairJson) {
+    public KeyPair keyPairFromJson(String keyPairJson) throws U2FException {
         BigInteger x = null;
         BigInteger y = null;
         BigInteger d = null;
@@ -178,10 +171,10 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
             JSONObject jsonPublicKey = jsonKeyPair.getJSONObject("publicKey");
             x = new BigInteger(Utils.decodeHexString(jsonPublicKey.getString("x")));
             y = new BigInteger(Utils.decodeHexString(jsonPublicKey.getString("y")));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (DecoderException e) {
-            e.printStackTrace();
+        } catch (JSONException ex) {
+            throw new U2FException("Failed to deserialize key pair from JSON", ex);
+        } catch (DecoderException ex) {
+            throw new U2FException("Failed to deserialize key pair from JSON", ex);
         }
 
         ECParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec("secp256r1");
@@ -199,13 +192,11 @@ public class KeyPairGeneratorImpl implements org.gluu.oxpush2.u2f.v2.cert.KeyPai
             PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
 
             return new KeyPair(publicKey, privateKey);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new U2FException("Failed to deserialize key pair from JSON", ex);
+        } catch (InvalidKeySpecException ex) {
+            throw new U2FException("Failed to deserialize key pair from JSON", ex);
         }
-
-        return null;
     }
 
 }

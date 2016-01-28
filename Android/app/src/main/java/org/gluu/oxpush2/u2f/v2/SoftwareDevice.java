@@ -66,7 +66,13 @@ public class SoftwareDevice {
         this.keyPairGenerator = new KeyPairGeneratorImpl();
 
         final X509Certificate vendorCertificate = CertUtils.loadHexEncodedCertificate(BuildConfig.VENDOR_CERTIFICATE_CERT);
-        final PrivateKey vendorCertificatePrivateKey = keyPairGenerator.loadPrivateKey(BuildConfig.VENDOR_CERTIFICATE_PASSWORD);
+        final PrivateKey vendorCertificatePrivateKey;
+        try {
+            vendorCertificatePrivateKey = keyPairGenerator.loadPrivateKey(BuildConfig.VENDOR_CERTIFICATE_PRIVATE_KEY);
+        } catch (U2FException ex) {
+            Log.e(TAG, "Failed to load vendor private key", ex);
+            throw new RuntimeException("Failed to load vendor private key");
+        }
 
         this.u2fKey = new U2FKeyImpl(
                 vendorCertificate,
