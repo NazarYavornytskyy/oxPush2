@@ -32,6 +32,9 @@ import org.json.JSONException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +45,10 @@ import java.util.Map;
  * Created by Yuriy Movchan on 01/07/2016.
  */
 public class ProcessFragment extends Fragment implements View.OnClickListener {
+
+    SimpleDateFormat isoDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS");
+
+    SimpleDateFormat userDateTimeFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss");
 
     private static final String TAG = "process-fragment";
 
@@ -84,6 +91,8 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
 
         view.findViewById(R.id.button_approve).setOnClickListener(this);
         view.findViewById(R.id.button_decline).setOnClickListener(this);
+
+        updateRequestDetails(view);
 
         return view;
     }
@@ -131,6 +140,33 @@ public class ProcessFragment extends Fragment implements View.OnClickListener {
         } else {
             if (BuildConfig.DEBUG) Log.d(TAG, "Activity is null!");
         }
+    }
+
+    private void updateRequestDetails(View view) {
+        Date createdDate = null;
+        String oxPushCreated = oxPush2Request.getCreated();
+        if (Utils.isNotEmpty(oxPushCreated)) {
+            try {
+                createdDate = isoDateTimeFormat.parse(oxPushCreated);
+            } catch (ParseException ex) {
+                Log.e(TAG, "Failed to parse ISO date/time: " + oxPushCreated, ex);
+            }
+        }
+
+        String createdString = "";
+        if (createdDate != null) {
+            createdString = userDateTimeFormat.format(createdDate);
+        }
+
+        final boolean oneStep = Utils.isEmpty(oxPush2Request.getUserName());
+        final int authenticationType = oneStep ? R.string.one_step : R.string.two_step;
+
+        ((TextView) view.findViewById(R.id.text_application_value)).setText(oxPush2Request.getApp());
+        ((TextView) view.findViewById(R.id.text_issuer_value)).setText(oxPush2Request.getIssuer());
+        ((TextView) view.findViewById(R.id.text_created_value)).setText(createdString);
+        ((TextView) view.findViewById(R.id.text_authentication_type_value)).setText(authenticationType);
+        ((TextView) view.findViewById(R.id.text_authentication_method_value)).setText(oxPush2Request.getMethod());
+        ((TextView) view.findViewById(R.id.text_user_name_label_value)).setText(oxPush2Request.getUserName());
     }
 
     private void setFinalStatus(int statusId) {

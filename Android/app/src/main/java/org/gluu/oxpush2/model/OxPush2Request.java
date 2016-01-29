@@ -63,4 +63,8 @@ public class OxPush2Request {
     public void setUserName(String userName) {
         this.userName = userName;
     }
+
+    public String getCreated() {
+        return created;
+    }
 }

@@ -4,6 +4,13 @@
 
     <string name="oxpush2_into_text">Open Source Mobile Authentication from Gluu</string>
 
+    <string name="label_user_name">User Name</string>
+    <string name="label_authentication_method">Authentication Mode</string>
+    <string name="label_authentication_type">Authentication Type</string>
+    <string name="label_created">Created</string>
+    <string name="label_issuer">Issuer</string>
+    <string name="label_application">Application</string>
+
     <string name="action_settings">Settings</string>
     <string name="action_manage_keys">Manage Keys</string>
     <string name="button_scan_oxpush2">Scan oxPush2 QR code</string>
@@ -28,4 +35,7 @@
     <string name="auth_result_success">Successful authentication</string>
     <string name="auth_result_failed">Authentication failure</string>
     <string name="challenge_doesnt_match">Challenges doesn\'t match</string>
+
+    <string name="one_step">One Step</string>
+    <string name="two_step">Two Step</string>
 </resources>
